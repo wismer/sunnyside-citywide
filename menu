@@ -1,0 +1,64 @@
+require 'sequel'
+require 'prawn'
+require 'csv'
+require 'date'
+require 'pp'
+require 'fileutils'
+
+
+require_relative 'lib/ledger.rb'
+require_relative 'lib/denial.rb'
+require_relative 'lib/ar_report.rb'
+require_relative 'lib/custom_search.rb'
+require_relative 'lib/edi_draft.rb'
+require_relative 'lib/cash_receipt.rb'
+require_relative 'lib/pdf_report.rb'
+require_relative 'lib/private.rb'
+require_relative 'lib/auth_report.rb'
+module Sunnyside
+  DB = Sequel.connect('sqlite://sunnyside-test.db')
+  class Auth < Sequel::Model; end
+  class Charge < Sequel::Model; end
+  class Invoice < Sequel::Model; end
+  class Filelib < Sequel::Model; end
+  class Payment < Sequel::Model; end
+  class Claim < Sequel::Model; end
+  class Client < Sequel::Model; end
+  class Service < Sequel::Model; end
+  class Provider < Sequel::Model; end
+  class Visit < Sequel::Model; end
+end
+loop do 
+  puts "1.) LEDGER IMPORT"
+  puts "2.) EDI IMPORT"
+  puts "3.) 837 IMPORT"
+  puts "4.) A/R REPORT"
+  puts "5.) CASH RECEIPT IMPORT"
+  puts "6.) CUSTOM SEARCH"
+  puts "7.) EXPIRING AUTHORIZATION REPORT"
+  puts "8.) EXIT"
+  puts "select option: "
+  case gets.chomp
+  when '1' 
+    Sunnyside::ledger_file
+    Sunnyside.process_private
+  when '2' 
+    edi = Sunnyside::EraLibrary.new
+    edi.parse
+  when '3'
+    Sunnyside.parse_pdf
+  when '4' 
+    report = Sunnyside::Report.new
+  when '5' 
+    Sunnyside::CashReceipt.new.process
+  when '6'
+    rep = Sunnyside::Reporter.new
+    rep.check_existing
+  when '7'
+    Sunnyside.show_opts
+  when '8'
+    Sunnyside.process_private
+  else
+    exit
+  end
+end
