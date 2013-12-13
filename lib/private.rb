@@ -1,41 +1,55 @@
 module Sunnyside
-  def self.process_private
-    Dir["private/*.pdf"].each do |file|
-      PDF::Reader.new(file).pages.each { |page| PrivateInvoice.new(page.text).process }
-    end
+  PRIVATE_CLIENTS = ['TABICKMAN', 'JIBAJA', 'SUNNYSIDE COMMUNITY', 'BARROW', 'JENSEN']
+
+  def self.private_clients
+    Dir['private/*.PDF'].each { |file| PrivateClient.new(file).create_pdfS }
   end
 
-  class PrivateInvoice
-    attr_reader :text, :services, :invoice_total
-    def initialize(text)
-      @text          = text
-      @invoice_total = []
+  class PrivateClient
+    attr_reader :file
+
+    def initialize(file)
+      @file            = file
+      @selected        = []
     end
 
-    def process
-      service_lines.map { |line| line[23..120] }.each { |line| strip_line(line) } if invoice
+    def tabickman
+      selected_pages('TABICKMAN')
     end
 
-    def strip_line(line)
-      services = line.split(/\s+/)
-      dos, amt = services[1], services.last
-      invoice_total << amt.to_f
+    def jibaja
+      selected_pages('JIBAJA')
     end
 
-    def invoice_match?
-      Invoice.where(invoice_number: invoice.to_i).get(:amount) == find_total.round(2)
+    def community
+      selected_pages('SUNNYSIDE COMMUNITY')
     end
 
-    def find_total
-      invoice_total.inject { |x, y| x + y }
+    def jensen
+      selected_pages('JENSEN')
     end
 
-    def service_lines
-      text.split(/\n/).select { |line| line =~ /HHA|PCA/ }
+    def barrow
+      selected_pages('BARROW')
     end
 
-    def invoice
-      text[/^\s+\d+\s+[0-9\/]+\s+(\d+)/, 1]
+    def selected_pages(name)
+      PDF::Reader.new(file).pages.select { |page| page.text.include?(name) && page.text.include?('Client Copy') }.map { |page| page.number }
+    end
+
+    def date_parse
+      Date.parse(file[8..15])
+    end
+
+    def create_doc(client)
+      Prawn::Document.generate("./private/archive/#{client}-#{date_parse}.PDF", :skip_page_creation => true) { |pdf| 
+        selected_pages(client).each { |page| pdf.start_new_page(:template => file, :template_page => page) }
+      }
+      puts 'files created in ../private/archive/' 
+    end
+
+    def create_pdfs
+      PRIVATE_CLIENTS.each { |client| create_doc(client) }
     end
   end
 end
