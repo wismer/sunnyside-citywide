@@ -1,0 +1,11 @@
+invoice_number,client_name,dos,service_code,amount_charged,amount_paid,denial_reason,claim_number,check_number
+254585,"GARCIA, CLEMENT",2013-08-05,T1020,202.44,0.0,Charge exceeds fee schedule/maximum allowable,,3695440
+254585,"GARCIA, CLEMENT",2013-08-06,T1020,202.44,0.0,Charge exceeds fee schedule/maximum allowable,,3695440
+254585,"GARCIA, CLEMENT",2013-08-07,T1020,202.44,0.0,Charge exceeds fee schedule/maximum allowable,,3695440
+254585,"GARCIA, CLEMENT",2013-08-08,T1020,202.44,0.0,Charge exceeds fee schedule/maximum allowable,,3695440
+254585,"GARCIA, CLEMENT",2013-08-09,T1020,202.44,0.0,Charge exceeds fee schedule/maximum allowable,,3695440
+254585,"GARCIA, CLEMENT",2013-08-05,T1020,202.44,0.0,Charge exceeds fee schedule/maximum allowable,,3695440
+254585,"GARCIA, CLEMENT",2013-08-06,T1020,202.44,0.0,Charge exceeds fee schedule/maximum allowable,,3695440
+254585,"GARCIA, CLEMENT",2013-08-07,T1020,202.44,0.0,Charge exceeds fee schedule/maximum allowable,,3695440
+254585,"GARCIA, CLEMENT",2013-08-08,T1020,202.44,0.0,Charge exceeds fee schedule/maximum allowable,,3695440
+254585,"GARCIA, CLEMENT",2013-08-09,T1020,202.44,0.0,Charge exceeds fee schedule/maximum allowable,,3695440

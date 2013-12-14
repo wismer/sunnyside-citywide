@@ -1,0 +1,9 @@
+<h1>enter client</h1>
+
+<%= form_for :client do |t| %>
+  <%= t.label :name %><br>
+  <%= t.text_field :name %>
+  <%= t.label :fund_id %><br>
+  <%= t.text_field :fund_id %>
+  <%= t.submit %>
+<% end %>

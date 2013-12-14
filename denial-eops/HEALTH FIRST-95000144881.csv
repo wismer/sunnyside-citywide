@@ -1,0 +1,6 @@
+invoice_number,client_name,dos,service_code,amount_charged,amount_paid,denial_reason,claim_number,check_number
+249971,"BLANCO, CARMELI",2013-07-01,T1019,67.52,60.0,Charge exceeds fee schedule/maximum allowable,0107121366144,95000144881
+249971,"BLANCO, CARMELI",2013-07-02,T1019,67.52,60.0,Charge exceeds fee schedule/maximum allowable,0107121366144,95000144881
+249971,"BLANCO, CARMELI",2013-07-03,T1019,67.52,60.0,Charge exceeds fee schedule/maximum allowable,0107121366144,95000144881
+249971,"BLANCO, CARMELI",2013-07-04,T1019,67.52,60.0,Charge exceeds fee schedule/maximum allowable,0107121366144,95000144881
+249971,"BLANCO, CARMELI",2013-07-05,T1019,67.52,60.0,Charge exceeds fee schedule/maximum allowable,0107121366144,95000144881

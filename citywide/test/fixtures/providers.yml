@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  name: MyString
+  fund: 1
+  account: 1
+  d_account: 1
+
+two:
+  name: MyString
+  fund: 1
+  account: 1
+  d_account: 1

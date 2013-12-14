@@ -1,0 +1,6 @@
+invoice_number,client_name,dos,service_code,amount_charged,amount_paid,denial_reason,claim_number,check_number
+246235,"PANOS, DESPINA",2013-06-01,T1020,-151.83,0.0,Charge exceeds fee schedule/maximum allowable,,3649169
+246235,"PANOS, DESPINA",2013-06-02,T1020,-151.83,0.0,Charge exceeds fee schedule/maximum allowable,,3649169
+246235,"PANOS, DESPINA",2013-06-03,T1020,-151.83,0.0,Charge exceeds fee schedule/maximum allowable,,3649169
+246235,"PANOS, DESPINA",2013-06-04,T1020,-151.83,0.0,Charge exceeds fee schedule/maximum allowable,,3649169
+246235,"PANOS, DESPINA",2013-06-05,T1020,-151.83,0.0,Charge exceeds fee schedule/maximum allowable,,3649169

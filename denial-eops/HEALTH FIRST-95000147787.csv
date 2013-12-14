@@ -1,0 +1,4 @@
+invoice_number,client_name,dos,service_code,amount_charged,amount_paid,denial_reason,claim_number,check_number
+251766,"BLANCO, CARMELI",2013-07-17,T1019,67.52,60.0,Charge exceeds fee schedule/maximum allowable,0107251368328,95000147787
+251766,"BLANCO, CARMELI",2013-07-18,T1019,67.52,60.0,Charge exceeds fee schedule/maximum allowable,0107251368328,95000147787
+251766,"BLANCO, CARMELI",2013-07-19,T1019,67.52,60.0,Charge exceeds fee schedule/maximum allowable,0107251368328,95000147787
