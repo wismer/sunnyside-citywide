@@ -16,6 +16,19 @@ require 'sunnyside/menu'
 require 'sunnyside/expiring_auth'
 
 module Sunnyside
-  EDI_FILES = ENV["HOME"] + "/project_files/EDI/"
-  Menu.new.start
+  LOCAL_FILES = ENV["HOME"] + "/project_files/"
+  puts "checking local folders for appropriate files..."
+  if Dir.exist?(LOCAL_FILES)
+    Menu.new.start
+  else
+    puts "Creating folder..."
+    Dir.mkdir(LOCAL_FILES + "/835")
+    Dir.mkdir(LOCAL_FILES + "/837")
+    Dir.mkdir(LOCAL_FILES + "/summary")
+    Dir.mkdir(LOCAL_FILES + "/db")
+    Dir.mkdir(LOCAL_FILES + "/new-ledger")
+    Dir.mkdir(LOCAL_FILES + "/cash_receipts")
+    Dir.mkdir(LOCAL_FILES + "/other")
+    Menu.new.start
+  end
 end

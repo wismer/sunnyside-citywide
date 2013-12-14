@@ -1,8 +1,8 @@
 module Sunnyside
   def self.edi_parser
     print "checking for new files...\n"
-    Dir.entries('./835/').reject{|x| !x.include?('.txt') || Filelib.map(:filename).include?(x) }.each do |file|
-      data  = File.open('./835/'+file).read.split(/~CLP\*/)
+    Dir["#{LOCAL_FILES}/835/*.txt"].select { |file| Filelib.map(:filename).count == 0 }.each do |file|
+      data  = File.open("#{LOCAL_FILES}/835/#{file}").read.split(/~CLP\*/)
       edi   = Edi.new(data)
       print "#{file}\n"
       edi.check_type_and_number

@@ -5,7 +5,7 @@ module Sunnyside
   # report page by page, it would be best to compress the text from every page into a single string and then parse from there.
 
   def self.parse_pdf
-    Dir["837-reports/*.PDF"].select { |file| Filelib.where(filename: file).count == 0 }.each do |file|
+    Dir["#{LOCAL_FILES}/837/*.PDF"].select { |file| Filelib.where(filename: file).count == 0 }.each do |file|
       puts "processing #{file}..."
       data = PDF::Reader.new(file).pages.map { |page| page.raw_content.gsub(/^\(\s|\)'$/, '') }.join
       data.split(/^\((?=REG\s+LOC)/).each { |entry| ParseInvoice.new(entry).process } 
