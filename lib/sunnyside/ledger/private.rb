@@ -1,7 +1,8 @@
 module Sunnyside  
   def self.process_private
-    file = Dir["../private/*.PDF"][0]
-    PDF::Reader.new(file).pages.each { |inv| InvoiceParse.new(inv.text.split(/\n/)).process if inv.text.include?('Remit') }
+    Dir["#{LOCAL_FILES}private/*.PDF"].each do |file|
+      PDF::Reader.new(file).pages.each { |inv| InvoiceParse.new(inv.text.split(/\n/)).process if inv.text.include?('Remit') }
+    end
   end
 
   class InvoiceParse

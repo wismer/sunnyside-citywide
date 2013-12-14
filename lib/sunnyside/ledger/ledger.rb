@@ -2,8 +2,14 @@ require 'prawn'
 module Sunnyside
   # This should be redone.
   def self.ledger_file
-    root_dir = Dir["summary/*.PDF"].each {|file| Ledger.new(file).process_file if !Filelib.map(:filename).include?(file) } || []
-    puts "No files to process." if root_dir.empty? 
+    Dir["#{LOCAL_FILES}summary/*.PDF"].each {|file| 
+      if Filelib.where(filename: file).count == 0 
+        puts "processing #{file}..."
+        ledger = Ledger.new(file)
+        ledger.process_file
+        Filelib.insert(filename: file)
+      end
+    }
   end
   
   class Ledger
@@ -15,7 +21,6 @@ module Sunnyside
     def initialize(file)
       @file      = file
       @pages     = PDF::Reader.new(file).pages.select { |page| !page.raw_content.include?('VISITING NURSE SERVICE') }
-      puts "processing #{file}..."
     end
 
     def providers

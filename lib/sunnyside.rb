@@ -1,5 +1,6 @@
 require 'prawn'
 require 'sequel'
+require 'fileutils'
 require "sunnyside/version"
 require 'sunnyside/cash_receipts/cash_receipt'
 require 'sunnyside/cash_receipts/ics'
@@ -15,19 +16,13 @@ require 'sunnyside/menu'
 require 'sunnyside/expiring_auth'
 
 module Sunnyside
+  folders     = ["835", "837", "summary", "db", "new-ledger", "cash_receipts", "private"]
   LOCAL_FILES = ENV["HOME"] + "/sunnyside-files/"
   puts "checking local folders for appropriate files..."
   if !Dir.exist?(LOCAL_FILES)
     puts "Creating folders..."
     Dir.mkdir(LOCAL_FILES)
-    Dir.mkdir(LOCAL_FILES + "835")
-    Dir.mkdir(LOCAL_FILES + "837")
-    Dir.mkdir(LOCAL_FILES + "summary")
-    Dir.mkdir(LOCAL_FILES + "db")
-    Dir.mkdir(LOCAL_FILES + "new-ledger")
-    Dir.mkdir(LOCAL_FILES + "cash_receipts")
-    Dir.mkdir(LOCAL_FILES + "other")
+    folders.each { |folder| Dir.mkdir("#{LOCAL_FILES}#{folder}") }
   end
   require 'sunnyside/models/sequel_classes'
-  Menu.new.start
 end

@@ -1,7 +1,7 @@
 module Sunnyside
   def self.edi_parser
     print "checking for new files...\n"
-    Dir["#{LOCAL_FILES}/835/*.txt"].select { |file| Filelib.map(:filename).count == 0 }.each do |file|
+    Dir["#{LOCAL_FILES}835/*.txt"].select { |file| Filelib.map(:filename).count == 0 }.each do |file|
       data  = File.open("#{LOCAL_FILES}/835/#{file}").read.split(/~CLP\*/)
       edi   = Edi.new(data)
       print "#{file}\n"
