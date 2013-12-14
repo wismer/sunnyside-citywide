@@ -2,12 +2,12 @@ require 'prawn'
 module Sunnyside
   # This should be redone.
   def self.ledger_file
-    Dir["#{LOCAL_FILES}summary/*.PDF"].each {|file| 
+    Dir["#{LOCAL_FILES}/summary/*.PDF", "#{LOCAL_FILES}/summary/*.pdf"].each {|file| 
       if Filelib.where(filename: file).count == 0 
         puts "processing #{file}..."
         ledger = Ledger.new(file)
         ledger.process_file
-        Filelib.insert(filename: file)
+        Filelib.insert(filename: file, purpose: 'summary')
       end
     }
   end
@@ -19,7 +19,7 @@ module Sunnyside
     # and then proceeds to pass the page date onto the PageData class
 
     def initialize(file)
-      @file      = file
+      @file      = File.basename(file)
       @pages     = PDF::Reader.new(file).pages.select { |page| !page.raw_content.include?('VISITING NURSE SERVICE') }
     end
 
@@ -41,7 +41,7 @@ module Sunnyside
 
     def initialize(page_data, file, provider = nil)
       @provider  = page_data[/CUSTOMER:\s+(.+)(?=\)')/, 1]
-      @post_date = Date.parse(file[8..15])
+      @post_date = Date.parse(file[0..7])
       @page_data = page_data.split(/\n/).select { |line| line =~ /^\([0-9\/]+\s/ }
     end
 
