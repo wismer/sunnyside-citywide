@@ -7,7 +7,7 @@ module Sunnyside
         puts "3.) 837 IMPORT"
         puts "4.) A/R REPORT"
         puts "5.) CASH RECEIPT IMPORT"
-        puts "6.) CUSTOM SEARCH"
+        puts "6.) ACCESS FTP"
         puts "7.) EXPIRING AUTHORIZATION REPORT"
         puts "8.) EXIT"
         print "select option: "
@@ -24,8 +24,8 @@ module Sunnyside
         when '5' 
           Sunnyside::CashReceipt.new.process
         when '6'
-          rep = Sunnyside::Reporter.new
-          rep.check_existing
+          Sunnyside.access_ftp(:download)
+          Sunnyside.access_ftp(:upload)
         when '7'
           Sunnyside.show_opts
         when '8'
