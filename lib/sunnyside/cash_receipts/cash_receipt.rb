@@ -60,7 +60,7 @@ module Sunnyside
   end
 
   class ManualPayment < CashReceipt
-    attr_reader :check_number, :invoices, :post_date
+    attr_reader :check, :invoices, :post_date
 
     def initialize
       @check, @post_date = self.check_number_and_date
@@ -69,14 +69,14 @@ module Sunnyside
 
     def payment_id
       if check_exists?
-        Payment.where(check_number: check_number).get(:id)
+        Payment.where(check_number: check).get(:id)
       else
-        Payment.insert(check_number: check_number)
+        Payment.insert(check_number: check)
       end
     end
 
     def check_exists?
-      Payment.where(check_number: check_number).count > 0
+      Payment.where(check_number: check).count > 0
     end
 
     def date
@@ -87,13 +87,15 @@ module Sunnyside
       invoices.each { |inv|
         invoice_data(inv) { |invoice| 
           claim_id = create_claim(invoice)
-          create_services(inv, claim_id)
+          create_services(invoice, claim_id)
+          edit_services(inv) if denial_present?(inv)
+          self.receivable_csv(invoice, payment_id, check, post_date)
         }
       }
     end
 
-    def invoice_data(claim)
-      invoice = claim.gsub(/-d/, '')
+    def invoice_data(inv)
+      invoice = inv.gsub(/-d/, '').to_i
       yield Invoice[invoice]
     end
 
@@ -110,48 +112,46 @@ module Sunnyside
     end
 
     def create_services(invoice, claim_id)
-      visits.all.each { |visit| 
+      visits(invoice).each { |visit| 
         Service.insert(
-          :invoice_id   => visit.invoice_number, 
+          :invoice_id   => visit.invoice_id, 
           :payment_id   => payment_id, 
           :claim_id     => claim_id, 
-          :service_code => service_code, 
+          :service_code => visit.service_code, 
           :paid         => visit.amount, 
           :billed       => visit.amount, 
-          :dos          => visit.dos
+          :dos          => visit.dos,
           :units        => visit.units 
         )
       }
     end
 
     def visits(invoice)
-      Visit.where(invoice_id: invoice.invoice_number)
+      Visit.where(invoice_id: invoice.invoice_number).all
     end
 
 
 
-    def services(invoice)
-      Service.where(payment_id: payment_id, invoice_id: invoice)
+    def services(inv)
+      Service.where(payment_id: payment_id, invoice_id: inv)
     end
 
-    def edit_services(invoice)
+    def edit_services(inv)
+      invoice = inv.gsub(/-d/, '').to_i
       print "Select the day you wish to edit by the corresponding number followed by the adjusted amount\n"
-      print "When you are finished, press enter."
+      print "When you are finished, type 'done'."
       print "(e.g. 3451 23.50) Enter in the number now: "
       loop do 
-        services.all.each { |svc| puts "#{svc.id} #{svc.dos} #{svc.service_code} #{svc.modifier} #{svc.paid}" }
-        day, adjusted_amt = gets.chomp.split
-        if !day.empty?
-          Service[day].update(paid: adjusted_amt)
-        else
-          edit_services(invoice)
+        services(invoice).all.each { |svc| puts "#{svc.id} #{svc.dos} #{svc.service_code} #{svc.modifier} #{svc.paid}" }
+        id, adjusted_amt = gets.chomp.split
+        if !id.nil?
+          print "Type in the denial reason now: "
+          denial_reason = gets.chomp
+          Service[id].update(paid: adjusted_amt, denial_reason: denial_reason)
+        else 
+          break
         end
       end
-
-    end
-
-    def add_services(invoice)
-      yield AddService.new(invoice)
     end
 
     def denial_present?(invoice)
@@ -159,72 +159,7 @@ module Sunnyside
     end
 
     def visits(invoice)
-      Visit.where(invoice_id: invoice).all
-    end
-  end
-
-  class AddService < CashReceipt
-    attr_reader :visits, :claim_id
-
-    def initialize(invoice, claim_id)
-      @visits     = Visit.where(invoice_id: invoice)
-      @claim_id   = claim_id
-      @payment_id = payment_id  
-    end
-
-    def visits_exist?
-      visits.count > 0
-    end
-
-    def process_visits
-      visits.all.each do |visit|
-        Service.insert(
-          :payment_id   => payment_id, 
-          :invoice_id   => visit.invoice_id, 
-          :claim_id     => claim_id, 
-          :service_code => visit.service_code, 
-          :billed       => visit.amount, 
-          :dos          => visit.dos
-        )
-      end
-    end
-
-    def new_services
-      if visits_exist?
-        process_visits
-      else
-        puts 'No visits found for this invoice number.'
-      end
-    end
-  end
-
-  class InvoiceLine < EdiPayment
-    attr_reader :invoice_number, :post_date, :check_number
-
-    def initialize(invoice_number, post_date, check_number)
-      @invoice_number = invoice_number
-      @post_date      = post_date
-      @check_number   = check_number
-    end
-
-    def amount
-      Service.where(invoice_number: invoice_number, check_number: check_number).sum(:amount_paid).round(2)
-    end
-
-    def provider_name
-      Invoice.where(invoice_number: invoice_number).get(:provider)
-    end
-
-    def client
-      Invoice.where(invoice_number: invoice_number).get(:client_name)
-    end
-
-    def client_id
-      Client.where(client_name: client).get(:fund_id)
-    end
-
-    def provider
-      Provider.where(name: provider_name).first
+      Visit.where(invoice_id: invoice.invoice_number).all
     end
   end
 end
