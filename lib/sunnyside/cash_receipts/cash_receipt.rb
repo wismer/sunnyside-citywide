@@ -85,14 +85,50 @@ module Sunnyside
 
     def collate
       invoices.each { |inv|
-        add_services(inv) { |svcs| svcs.create_claim }
-        if denial_present?(inv)
-          edit_services(inv)
-        else
-          self.payable_csv(inv)
-        end
+        invoice_data(inv) { |invoice| 
+          claim_id = create_claim(invoice)
+          create_services(inv, claim_id)
+        }
       }
     end
+
+    def invoice_data(claim)
+      invoice = claim.gsub(/-d/, '')
+      yield Invoice[invoice]
+    end
+
+    def create_claim(invoice)
+      Claim.insert(
+        :invoice_id   => invoice.invoice_number, 
+        :client_id    => invoice.client_id, 
+        :billed       => invoice.amount, 
+        :paid         => 0.0, 
+        :payment_id   => payment_id, 
+        :check_number => check, 
+        :provider_id  => invoice.provider_id
+      )
+    end
+
+    def create_services(invoice, claim_id)
+      visits.all.each { |visit| 
+        Service.insert(
+          :invoice_id   => visit.invoice_number, 
+          :payment_id   => payment_id, 
+          :claim_id     => claim_id, 
+          :service_code => service_code, 
+          :paid         => visit.amount, 
+          :billed       => visit.amount, 
+          :dos          => visit.dos
+          :units        => visit.units 
+        )
+      }
+    end
+
+    def visits(invoice)
+      Visit.where(invoice_id: invoice.invoice_number)
+    end
+
+
 
     def services(invoice)
       Service.where(payment_id: payment_id, invoice_id: invoice)
