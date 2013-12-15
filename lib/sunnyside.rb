@@ -1,5 +1,6 @@
 require 'prawn'
 require 'sequel'
+require 'csv'
 require 'fileutils'
 require "sunnyside/version"
 require 'sunnyside/cash_receipts/cash_receipt'

@@ -1,9 +1,9 @@
 module Sunnyside
   def receivable_csv(invoice, payment_id, check_number, post_date)
-    total    = Service.where(check_number: payment_id, invoice_id: invoice.invoice_number).sum(:paid)
-    prov     = Provider.where(provider_id: invoice.provider_id).all.join
-    fund_id  = Client.where(client_number: invoice.client_number)
-    CSV.open("#{LOCAL_FILES}/reports/EDI-citywide-import.csv", "a+") do |row| # #{post_date.gsub(/\//, '-')}-
+    total    = Service.where(invoice_id: invoice.invoice_number).sum(:paid)
+    prov     = Provider[invoice.provider_id]
+    fund_id  = Client[invoice.client_id].fund_id
+    CSV.open("#{LOCAL_FILES}/cash_receipts/EDI-citywide-import.csv", "a+") do |row| # #{post_date.gsub(/\//, '-')}-
       row << [1, check_number, 
                 post_date, 
                 fund_id, 
@@ -43,8 +43,32 @@ module Sunnyside
     end
   end
 
-  def payable_csv(invoice)
-    CSV.open()
+  def payable_csv(inv, post_date, prov)
+    fund_id = Client.where(client_number: invoice.client_id).get(:fund_id)
+    CSV.open("#{LOCAL_FILES}/new-ledger/#{inv.post_date}-IMPORT-FUND-EZ-LEDGER.csv", "a+") do |row|
+      row << [1, 
+                inv.invoice_number, 
+                post_date.strftime('%m/%d/%y'), 
+                fund_id, prov.name, post_date.strftime('%m/%d/%y'), 
+                "To Record #{post_date.strftime('%m/%d/%y')} Billing", 
+                "#{post_date[5..6]}/#{post_date[8..9]}#{prov.abbrev}", 
+                post_date.strftime('%m/%d/%y'), "To Rec for W/E #{post_date - 6} Billing", 
+                prov.fund, prov.credit_account,          
+                '', '',             '',              inv.amount,                   '']
+      row << [2, 
+                inv.invoice_number, 
+                post_date.strftime('%m/%d/%y'), 
+                fund_id, 
+                prov.name, 
+                post_date.strftime('%m/%d/%y'), 
+                "To Record #{post_date.strftime('%m/%d/%y')} Billing", 
+                "#{post_date[5..6]}/#{post_date[8..9]}#{prov.abbrev}", 
+                post_date.strftime('%m/%d/%y'), 
+                "To Rec for W/E #{post_date - 6} Billing", 
+                prov.fund, 
+                prov.debit_account,   
+                prov.fund, '',      prov.type,                     '',     inv.amount]
+    end   
   end
 end
 

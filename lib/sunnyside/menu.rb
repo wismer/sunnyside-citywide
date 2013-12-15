@@ -10,14 +10,13 @@ module Sunnyside
         puts "6.) CUSTOM SEARCH"
         puts "7.) EXPIRING AUTHORIZATION REPORT"
         puts "8.) EXIT"
-        puts "select option: "
+        print "select option: "
         case gets.chomp
         when '1' 
           Sunnyside.ledger_file
           Sunnyside.process_private
         when '2' 
-          edi = Sunnyside::EraLibrary.new
-          edi.parse
+          Sunnyside.edi_parser
         when '3'
           Sunnyside.parse_pdf
         when '4' 

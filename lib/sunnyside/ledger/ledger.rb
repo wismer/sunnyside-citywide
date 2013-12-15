@@ -49,12 +49,22 @@ module Sunnyside
     # This method accounts for the aberrations while still maintaining that any provider not recognized by the DB to be saved as a PRIVATE client.
 
     def formatted_provider
-      case provider
-      when 'ELDERSERVEHEALTH' then 'ELDERSERVE HEALTH'
-      when 'AMERIGROUP'       then 'AMERIGROUP 2'
-      else 
-        'PRIVATE'        
+      if provider_missing?
+        case provider
+        when 'ELDERSERVEHEALTH'
+          Provider.where(name: 'ELDERSERVE HEALTH').first
+        when 'AMERIGROUP'
+          Provider.where(name: 'AMERIGROUP 2').first
+        else 
+          Provider.where(name: 'PRIVATE').first        
+        end
+      else
+        Provider.where(name: provider).first
       end
+    end
+
+    def provider_missing?
+      Provider.where(name: provider).count == 0
     end
 
     def invoice_lines
@@ -63,16 +73,16 @@ module Sunnyside
 
     def invoice_data
       invoice_lines.each { |inv| inv.finalize }
+      Invoice.where(post_date: post_date).all.each { |inv| self.receivable_csv(inv, post_date, formatted_provider) }
     end
 
     # InvoiceLine does all the nitty-gritty parsing of an invoice line into the necessary fields the DB requres.
 
     class InvoiceLine < PageData
-      attr_accessor :invoice, :rate, :hours, :amount, :client_id, :client_name, :post_date, :provider_id, :provider
+      attr_accessor :invoice, :rate, :hours, :amount, :client_id, :client_name, :post_date, :provider
       def initialize(line, provider, post_date)
         @provider                                               = provider
         @post_date                                              = post_date
-        @provider_id                                            = Provider.where(name: provider).get(:id)
         @client_name                                            = line.slice!(20..45)
         @doc_date, @invoice, @client_id, @hours, @rate, @amount = line.split
       end
@@ -111,7 +121,7 @@ module Sunnyside
         if invoice_exist?
           update_invoice
         else
-          Invoice.insert(invoice_number: invoice, rate: rate, hours: hours, amount: amt, client_id: client_id, post_date: post_date, provider_id: provider_id, client_name: client_name.strip)
+          Invoice.insert(invoice_number: invoice, rate: rate, hours: hours, amount: amt, client_id: client_id, post_date: post_date, provider_id: provider.id, client_name: client_name.strip)
         end
       end
 

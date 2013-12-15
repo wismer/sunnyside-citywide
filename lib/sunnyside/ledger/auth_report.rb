@@ -1,4 +1,3 @@
-require 'fileutils'
 module Sunnyside
 
   # REG LOC is the only repeating element that would indicate that there's a new client being read. So instead of reading the pdf

@@ -1,69 +1,80 @@
 module Sunnyside
   def self.edi_parser
     print "checking for new files...\n"
-    Dir["#{LOCAL_FILES}835/*.txt"].select { |file| Filelib.map(:filename).count == 0 }.each do |file|
-      data  = File.open("#{LOCAL_FILES}/835/#{file}").read.split(/~CLP\*/)
-      edi   = Edi.new(data)
-      print "#{file}\n"
-      edi.check_type_and_number
-      edi.separate_claims_from_services!
-      edi.parse_claim_header(file)
-      edi.save_payment_to_db(file)
+    Dir["#{LOCAL_FILES}/835/*.txt"].select { |file| Filelib.where(:filename => file).count == 0 }.each do |file|
+      print "processing #{file}...\n"
+      data  = File.open(file).read.split(/~CLP\*/)
+      edi   = Edi.new(data, file)
+      edi.parse_claim_header
       Filelib.insert(filename: file, created_at: Time.now, purpose: 'EDI Import', file_type: '835 Remittance')
+      edi.save_payment_to_db
     end
   end
   class Edi
-    attr_reader :header, :check_number
-    def initialize(data)
+    attr_reader :header, :claims, :file
+    def initialize(data, file)
       @header, @claims = data[0], data.drop(1)
+      @file            = file
     end
 
-    def check_type_and_number
+    def process_file
+      claims.map { |clm| clm.split(/~(?=SVC)/) }.each do |claim|
+        claim_head = claim[0]
+        services   = claim.select { |section| section =~ /^SVC/ }
+        InvoiceHeader.new(claim_head, services).parse_data
+      end
+    end
+
+    def check_number
+      header[/(?<=~TRN\*\d\*)\w+/, 0]
+    end
+
+    def check_total
+      header[/(?<=~BPR\*\w\*)[0-9\.\-]+/] || 0.0
+    end
+
+    def type
       if header[/(?<=\*C\*)ACH/] == 'ACH'
-        @type         = 'EFT Wire Transfer'
-        @check_number = header[/(?<=~TRN\*\d\*)\w+/]
-        @check_amount = header[/(?<=~BPR\*\w\*)[0-9\.\-]+/]
+        'Electronic Funds Transfer'
       elsif header[/(?<=\*C\*)CHK/] == 'CHK'
-        @type         = 'Physical Check Issued'
-        @check_number = header[/(?<=~TRN\*\d\*)\w+/]
-        @check_amount = header[/(?<=~BPR\*\w\*)[0-9\.\-]+/]
+        'Physical Check Issued'
       else
-        @type         = 'NON-PAYMENT'
-        @check_number = '0'
+        'Non Payment'
       end
     end
 
-    def check
-      if check_number.include?('E') # E for Fidelis
-        check_number[/\d+[A-Z]+(\d+)/, 1] 
-      else
-        check_number
-      end
+    # not working
+
+    # def check
+    #   if check_number.include?('E') # E for Fidelis
+    #     check_number[/\d+[A-Z]+(\d+)/, 1] 
+    #   else
+    #     check_number
+    #   end
+    # end
+
+    def separate_claims_from_services
+      claims.map {|clm| clm.split(/~(?=SVC)/)}
     end
 
-    def separate_claims_from_services!
-      @claims.map!{|clm| clm.split(/~(?=SVC)/)}
-    end
-
-    def parse_claim_header(file)
-      @claims.each do |clm|
+    def parse_claim_header
+      separate_claims_from_services.each do |clm|
         claim_data = clm[0]
         services   = clm.reject{|x| x !~ /^SVC/}
-        claims     = InvoiceHeader.new(claim_data)
+        claims     = InvoiceHeader.new(claim_data, check_number)
         claims.format_data
-        claims.add_to_db(check, file)
-        claims.get_claim_id(check)
-        parse_service(services) {|svc| claims.parse_svc(svc, check)}
+        claims.add_to_db(check_number, file)
+        parse_service(services) {|svc| claims.parse_svc(svc, check_number)}
       end
     end
 
-    def save_payment_to_db(file)
-      provider = Claim.where(check_number: @check_number).get(:provider) || 'SENIOR HEALTH PARTNERS'
-      Payment.insert(provider: provider, filename: file, type: @type, check_total: @check_amount, check_number: @check_number, import_status: false, claim_count: claim_count(file))
+    def save_payment_to_db
+      provider = Claim.where(check_number: check_number).get(:provider_id) || 17
+      Payment.insert(provider_id: provider, filelib_id: filelib_id, check_total: check_total, check_number: check_number)
     end
 
-    def claim_count(file)
-      return Claim.where(ref_file: file).count
+    def filelib_id
+      Filelib.where(filename: file).get(:id)
     end
 
     def parse_service(services)
@@ -72,19 +83,18 @@ module Sunnyside
   end
 
   class InvoiceHeader < Edi
-    attr_accessor :claim_number, :invoice_number
-    def initialize(claim)
+    attr_accessor :claim_number, :invoice_number, :response_code, :amt_charged, :amt_paid, :check_number
+    def initialize(claim, check_number)
       @invoice_number, @response_code, @amt_charged, @amt_paid, @whatever, @claim_number = claim.match(/^([\w\.]+)\*(\d+)\*([0-9\.\-]+)\*([0-9\.\-]+)\*([0-9\.\-]+)?\*+\w+\*(\w+)/).captures
-      # @client_last, @client_first, @client_middle, @member_id                            = claim.match(/~NM1\*QC\*\d+\*(\w+)\*(\w+)\*(\w)?\*+MI\*(\d+)/).captures
+      @check_number   = check_number
     end
 
     def format_data
-      @invoice_number         = @invoice_number[/^\w+/].gsub(/[OLD]/, 'O' => '0', 'D' => '8', 'L' => '1').gsub(/^0/, '')[0..5].to_i
-      @amt_paid, @amt_charged = @amt_paid.to_f, @amt_charged.to_f
+      @invoice_number         = invoice_number[/^\w+/].gsub(/[OLD]/, 'O' => '0', 'D' => '8', 'L' => '1').gsub(/^0/, '')[0..5].to_i
     end
 
-    def get_claim_id(check)
-      @claim_id = Claim.where(invoice_number: @invoice_number, check_number: check).get(:id)
+    def claim_id
+      Claim.where(invoice_id: invoice_number, check_number: check_number).get(:id)
     end
 
     def parse_svc(service, check_number)
@@ -94,22 +104,22 @@ module Sunnyside
         svc = Detail.new(service[0], service[1])
         svc.set_denial(service[2])
       end
-      svc.display(@invoice_number)
-      svc.save_to_db(@invoice_number, check_number, @claim_id)
+      svc.display(invoice_number)
+      svc.save_to_db(invoice_number, check_number, claim_id)
     end
 
     def prov
-      Invoice.where(invoice_number: @invoice_number).get(:provider)
+      Invoice.where(invoice_number: invoice_number).get(:provider_id)
     end
 
     def add_to_db(check, file)
-      Claim.insert(provider: prov, invoice_number: @invoice_number, amount_charged: @amt_charged, amount_paid: @amt_paid, check_number: check, control_number: @claim_number, denial_reason: @response_code, ref_file: file)
+      Claim.insert(provider_id: prov, invoice_id: invoice_number, billed: amt_charged, paid: amt_paid, check_number: check_number, control_number: claim_number, status: response_code)
     end
   end
 
   class Detail < Edi
 
-    attr_reader :billed, :paid
+    attr_reader :billed, :paid, :denial_reason, :date, :billed, :paid, :units, :service_code
     def initialize(service, date, denial_reason=nil, denial_code=nil)
       @service_code, @billed, @paid, @units = service.match(/HC:([A-Z0-9\:]+)\*([0-9\.\-]+)\*([0-9\.\-]+)?\**([0-9\-]+)?/).captures
       @date = Date.parse(date[/\d+$/])
@@ -132,7 +142,7 @@ module Sunnyside
     end
 
     def save_to_db(invoice, check, claim_id)
-      Service.insert(invoice_number: invoice, service_code: @service_code, units: @units.to_f, amount_charged: @billed.to_f, amount_paid: @paid.to_f, denial_reason: @denial_reason, dos: @date, check_number: check, claim_id: claim_id)
+      Service.insert(invoice_id: invoice, service_code: service_code, units: units.to_f, billed: billed.to_f, paid: paid.to_f, denial_reason: denial_reason, dos: date, claim_id: claim_id)
     end
 
     def set_code(code)

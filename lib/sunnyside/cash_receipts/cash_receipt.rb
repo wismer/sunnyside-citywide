@@ -29,28 +29,32 @@ module Sunnyside
 
   class EdiPayment
     include Sunnyside
-    attr_reader :claims, :post_date, :check_number
+    attr_reader :check_number, :post_date
 
     def initialize
       @check_number, @post_date = self.check_number_and_date
     end
 
     def invoices
-      claims.map { |clm| clm.invoice_number }.uniq
+      Claim.where(check_number: check_number).map { |clm| clm.invoice_id }.uniq
     end
 
     def populated_data
-      invoices.map { |inv| InvoiceLine.new(inv, post_date, check_number) }
+      invoices.map { |inv| Invoice[inv] }
     end
 
     def total
       populated_data.map { |inv| inv.amount }.inject { |x, y| x + y }.round(2)
     end
 
-    def to_csv
+    def payment_id
+      Payment.where(check_number: check_number).get(:id)
+    end
+
+    def collate
       puts "Total Amount Paid for this check is: #{total}\nProcessing..."
-      populated_data.each { |inv| self.create_csv(inv) if inv.amount > 0.0 }
-      puts "Check added to ledger-files/EDI-citywide-import.csv"
+      populated_data.each { |inv| self.receivable_csv(inv, payment_id, check_number, post_date) if inv.amount > 0.0 }
+      puts "Check added to #{LOCAL_FILES}/EDI-citywide-import.csv"
       puts "Please note that there are #{denied_services} service days with possible denials"
     end
 

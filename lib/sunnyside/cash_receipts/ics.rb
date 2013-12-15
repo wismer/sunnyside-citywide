@@ -1,3 +1,5 @@
+# Not implemented yet
+
 module Sunnyside
   def self.ics_file
     Dir['data/icseop/*.csv'].each { |file| ICS.new(file).process }
