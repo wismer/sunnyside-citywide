@@ -31,3 +31,11 @@ First, some context:
 
 <p>The most challenging aspect of creating these tools was the EDI interpreter. After some time, the agency I work for adopted the use of these files for a few business partners (providers). Though I was able to create one that inteprets the 835 variant of the file format and get the necessary information, there are still chunks of data that I simply do not know how to parse. There are gems that would handle this for me, but for some reason, the business partners use an older format of EDI (which the gems do not support).</p>
 
+= TO DO
+<ul>
+  <li>Link the <code>Sequel.connect(DB)</code> to the Sunnyside's network drive and test to see if it works.</li>
+  <li>Test and implement the new EDI parser</li>
+  <li>Add functionality for Sunnyside HC Project</li>
+  <li>Populate FUND-EZ ids in the CLIENT table of the DB</li>
+  <li>Custom search function for specific clients, invoices and services</li>
+</ul>
