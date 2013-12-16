@@ -4,10 +4,10 @@ sunnyside-citywide
 I wrote this gem for a few reasons: 
 
 <ol>
-  <li>1.) To be able to make my life as a glorified data entry clerk for a home health care agency and their billing department more tolerable.</li>
-  <li>2.) To make it simple enough and easy to use so that my co workers could use it in case that I am not around.</li>
-  <li>3.) To learn how to use GitHub.</li>
-  <li>4.) To learn more about ruby and programming in general.</li>
+  <li>To be able to make my life as a glorified data entry clerk for a home health care agency and their billing department more tolerable.</li>
+  <li>To make it simple enough and easy to use so that my co workers could use it in case that I am not around.</li>
+  <li>To learn how to use GitHub.</li>
+  <li>To learn more about ruby and programming in general.</li>
 </ol>
 As of this writing, the gem is incomplete and due to it's incredibly specific purpose, it would only work for this agency that I work for. 
 
