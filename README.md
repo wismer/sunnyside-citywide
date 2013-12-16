@@ -2,11 +2,13 @@ sunnyside-citywide
 ==================
 
 I wrote this gem for a few reasons: 
-  1.) To be able to make my life as a glorified data entry clerk for a home health care agency and their billing department more tolerable.
-  2.) To make it simple enough and easy to use so that my co workers could use it in case that I am not around.
-  3.) To learn how to use GitHub
-  4.) To learn more about ruby and programming in general.
 
+<ol>
+  <li>1.) To be able to make my life as a glorified data entry clerk for a home health care agency and their billing department more tolerable.</li>
+  <li>2.) To make it simple enough and easy to use so that my co workers could use it in case that I am not around.</li>
+  <li>3.) To learn how to use GitHub.</li>
+  <li>4.) To learn more about ruby and programming in general.</li>
+</ol>
 As of this writing, the gem is incomplete and due to it's incredibly specific purpose, it would only work for this agency that I work for. 
 
 First, some context: 
@@ -22,7 +24,7 @@ First, some context:
   </li>
   <li>  
     Other agencies in this part of the health care industry usually handle financial transactions over health care claims through EDI or <a href="http://en.wikipedia.org/wiki/Electronic_data_interchange">Electronic Data Interchange</a>. Though it predates XML, it was still more useful than receiving an Explanation of Benefits/Payment that could be several hundred pages long. Though my agency was interested in adopting this standard of claim settlement, it was not equipped to do so.
-  <li>
+  </li>
 </ol>
 
 <p>With these challenges in mind, the most useful thing that could be done was to try to mimic the data that the SanData DB and the FUND-EZ DB were supposed to share. So, by relying on the numerous 100+ page PDF reports, I was able to parse them (after significant trial and error) with the gem pdf-reader. Storing that data was another matter, so I used the gem sequel (again, after much trial and error). Once secured in my own .db file, I could specify data by either manually typing in a parameter, like the date the invoice was posted or the check number, and then have the data be exported into a csv file (which can then be used to import into FUND-EZ).</p>
