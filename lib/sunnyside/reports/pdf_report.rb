@@ -11,11 +11,12 @@ module Sunnyside
   end  
   class Reporter
     include Sunnyside
-    attr_reader :check, :posted
+    attr_reader :check, :posted, :check_number
 
     def initialize(check, posted)
-      @check  = Claim.where(check_number: check)
-      @posted = posted
+      @check_number = check
+      @check        = Claim.where(check_number: check)
+      @posted       = posted
     end
 
     def pdf_report
@@ -37,18 +38,19 @@ module Sunnyside
     end
 
     def report
-      CheckEOP.new(check, posted, provider)
+      CheckEOP.new(check, posted, provider, check_number)
     end
   end
 
   class CheckEOP < Reporter
-    attr_reader :posted, :check_number, :claims, :services
+    attr_reader :posted, :check_number, :claims, :pdf
 
-    def initialize(claims, posted, provider)
-      @claims   = claims
-      @posted   = posted
-      @provider = provider
-      @services = claims.map(:id)
+    def initialize(claims, posted, provider, check_number)
+      @claims       = claims
+      @posted       = posted
+      @provider     = provider
+      @check_number = check_number
+      @pdf          = Prawn::Document.generate("#{LOCAL_FILES}/#{provider}-#{check_number}.PDF")
     end
 
     def collate_services
