@@ -1,111 +1,61 @@
 require "money"
 require "pp"
 module Sunnyside
+
+  def self.run_report
+    print "Type in the check number in order to create the PDF file: "
+    check   = gets.chomp
+    print "Now enter the date the check was posted to FUND EZ: "
+    postted = gets.chomp
+    Reporter.new(check, posted).pdf_report
+  end  
   class Reporter
-    attr_reader :claim_data, :service_data, :takeback, :takeback_data, :check, :files, :total
-    def initialize
-      @claim_data     = []
-      @service_data   = []
-      @takeback       = []
-      @takeback_data  = []
-      @files          = Dir["PDF-REPORTS/*.pdf"]
+    include Sunnyside
+    attr_reader :check, :posted
+
+    def initialize(check, posted)
+      @check  = Claim.where(check_number: check)
+      @posted = posted
     end
 
-    def check_existing
-      Payment.all.each do |payment|
-        if !files.any? { |file| file.include?(payment.check_number.to_s) } || files.empty?
-          @check       = payment.id
-          @provider_id = payment.provider_id || 1204
-          @total       = payment.check_total || service_sum
-          verify_check
-        end
-      end
-    end
-
-    def service_sum
-      Service.where(payment_id: @check).sum(:paid)
-    end
-
-    def verify_check
-      claims.count > 0 ? generate_tables : non_payment
-    end
-
-    def non_payment
-    end
-
-    def claims(inv=nil)
-      if inv
-        Claim.where(payment_id: check, invoice_id: inv)
+    def pdf_report
+      if check.count == 0
+        puts "No claims were found with this check number. Please re-enter."
+        self.run_report
       else
-        Claim.where(payment_id: check)
+        create_pdf
       end
     end
 
-    # Gathers all unique invoice numbers involved with the check number
-    # then checks to see if there is more than 1 claim with that invoice number
-    # if true, the invoice number gets passed to a special table creation method
-    # if false, the invoice number gets passed to a regular table creation method
-
-    def generate_tables
-      invoices = claims.map(:invoice_id).uniq.sort
-      invoices.each do |inv|
-        if claims(inv).count > 1
-          takeback_table(inv)
-        else
-          claim_table(inv)
-        end
-      end
-      create_pdf
+    def provider
+      Provider[check.get(:provider_id)].name
     end
 
-    def takeback_table(inv)
-      @takeback << [inv, client(inv), '', '', currency(claims(inv).sum(:billed)), currency(claims(inv).sum(:paid)), 'Takeback']
-      takeback_services(inv)
+    def create_pdf
+      puts "creating report for #{provider} - Check Number: #{check.get(:check_number)} - posted on: #{posted}"
+      report.collate_services
     end
 
-    def takeback_claims(pdf)
-      pdf.move_down 10
-      pdf.table(@takeback, 
-        :header        => true,
-        :column_widths => [65, 75, 65, 65, 65, 65, 125], 
-          :cell_style  => {
-                          :align    => :center,
-                          :overflow => :shrink_to_fit,
-                          :size     => 8,
-                          :height   => 20
-                         })
-      # pdf.table(@takeback_data,
-      #   :column_widths => [75, 75, 75, 75, 75, 75, 125], 
-      #   :header => true, 
-      #   :cell_style => { 
-      #                     :align => :center,
-      #                     :size => 8, 
-      #                     :height => 20
-      #                   })
-      pdf.move_down 10
-      @takeback = []
+    def report
+      CheckEOP.new(check, posted, provider)
+    end
+  end
+
+  class CheckEOP < Reporter
+    attr_reader :posted, :check_number, :claims, :services
+
+    def initialize(claims, posted, provider)
+      @claims   = claims
+      @posted   = posted
+      @provider = provider
+      @services = claims.map(:id)
     end
 
-    def takeback_services(inv)
-      sub_total = 0.0
-      @takeback << ['DOS', 'Service Code', 'Units', 'Claim #', 'Billed', 'Paid', 'Explanation']
-      Service.where(invoice_id: inv, payment_id: check).order(:dos).all.each do |svc|
-        reason     = svc.denial_reason || 'None'
-        @takeback << [svc.dos, svc.service_code, svc.units, Claim[svc.claim_id].control_number, currency(svc.billed), currency(svc.paid), reason] 
-        sub_total     += svc.paid
-      end
-      @takeback << ['TOTAL', '', '', '', '', currency(sub_total)]
+    def collate_services
+      
     end
+  end
 
-    def opts
-      { 
-        :layout        => :landscape, 
-        :top_margin    => 50, 
-        :bottom_margin => 20, 
-        :right_margin  => 15,
-        :left_margin   => 15
-      } 
-    end
 
     def create_pdf
       puts     "#{Provider[@provider_id].name}: #{Payment[check].check_number}"
