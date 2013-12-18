@@ -9,7 +9,7 @@ module Sunnyside
         puts "5.) CASH RECEIPT IMPORT"
         puts "6.) ACCESS FTP"
         puts "7.) EXPIRING AUTHORIZATION REPORT"
-        puts "8.) EXIT"
+        puts "9.) MCO - MLTC HOURS UPDATE"
         print "select option: "
         case gets.chomp
         when '1' 
@@ -30,6 +30,8 @@ module Sunnyside
           Sunnyside.show_opts
         when '8'
           Sunnyside.process_private
+        when '9'
+          Sunnyside.run_mco_mltc
         else
           exit
         end
