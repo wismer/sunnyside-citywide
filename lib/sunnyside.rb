@@ -25,5 +25,6 @@ module Sunnyside
     Dir.mkdir(LOCAL_FILES)
     folders.each { |folder| Dir.mkdir("#{LOCAL_FILES}/#{folder}") }
   end
+  DB = Sequel.connect("sqlite:/#{LOCAL_FILES}/db/sunnyside.db")
   require 'sunnyside/models/sequel_classes'
 end
