@@ -37,6 +37,7 @@ module Sunnyside
   # Then, the data gets finalized (via the InvoiceLine child class of PageData) and inserted into the database. 
 
   class PageData
+    include Sunnyside
     attr_reader :page_data, :provider, :post_date
 
     def initialize(page_data, file, provider = nil)
@@ -73,7 +74,7 @@ module Sunnyside
 
     def invoice_data
       invoice_lines.each { |inv| inv.finalize }
-      Invoice.where(post_date: post_date).all.each { |inv| self.receivable_csv(inv, post_date, formatted_provider) }
+      # Invoice.where(post_date: post_date).all.each { |inv| self.payable_csv(inv, post_date, formatted_provider) }
     end
 
     # InvoiceLine does all the nitty-gritty parsing of an invoice line into the necessary fields the DB requres.

@@ -104,6 +104,32 @@ module Sunnyside
         primary_key :denial_code, :primary_key=>true
         String      :denial_explanation
       end
+
+      DB[:providers].insert(:credit_account=>1206, :fund=>500, :debit_account=>5005, :name=>"AMERIGROUP 2", :abbreviation=>"AMG", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1207, :fund=>300, :debit_account=>5007, :name=>"CHILDREN'S AID SOCIETY", :abbreviation=>"CAS", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1226, :fund=>300, :debit_account=>5026, :name=>"COMPREHENSIVE CARE MANAGEMENT", :abbreviation=>"CCM", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1203, :fund=>300, :debit_account=>5002, :name=>"DOMINICAN SISTERS FAM HLTH", :abbreviation=>"DSF", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1209, :fund=>300, :debit_account=>5009, :name=>"ELDERSERVE HEALTH", :abbreviation=>"ELD", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1212, :fund=>300, :debit_account=>5012, :name=>"EMBLEM HEALTH", :abbreviation=>"EMB", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1201, :fund=>300, :debit_account=>5001, :name=>"GUILDNET", :abbreviation=>"G", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1227, :fund=>500, :debit_account=>5027, :name=>"HEALTH CARE PARTNERS", :abbreviation=>"HCP", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1218, :fund=>500, :debit_account=>5018, :name=>"HEALTH FIRST", :abbreviation=>"HFS", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1216, :fund=>500, :debit_account=>5016, :name=>"HEALTH INSURANCE PLAN OF NY", :abbreviation=>"HIP", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1223, :fund=>300, :debit_account=>5023, :name=>"HHH LONG TERM HOME HLTH CARE", :abbreviation=>"HHH", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1228, :fund=>300, :debit_account=>5028, :name=>"INDEPENDENCE CARE SYSTEMS", :abbreviation=>"ICS", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1217, :fund=>500, :debit_account=>5017, :name=>"METROPLUS HEALTH", :abbreviation=>"MPH", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1219, :fund=>500, :debit_account=>5019, :name=>"NEIGHBORHOOD HEALTH PROVIDERS", :abbreviation=>"NHP", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1221, :fund=>500, :debit_account=>5021, :name=>"NYS CATHOLIC/FIDELIS", :abbreviation=>"FID", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1200, :fund=>300, :debit_account=>5000, :name=>"PRIVATE", :abbreviation=>"P", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1204, :fund=>300, :debit_account=>5004, :name=>"SENIOR HEALTH PARTNERS", :abbreviation=>"SHP", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1202, :fund=>300, :debit_account=>5003, :name=>"SUNNYSIDE COMMUNITY SERVICES", :abbreviation=>"SCS", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1213, :fund=>500, :debit_account=>5013, :name=>"UNITED HEALTH CARE", :abbreviation=>"UHC", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1229, :fund=>500, :debit_account=>5029, :name=>"VNSNY CHOICE SELECT HEALTH", :abbreviation=>"VCS", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1224, :fund=>500, :debit_account=>5024, :name=>"WELCARE OF NEW YORK, INC.", :abbreviation=>"WEL", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1310, :fund=>300, :debit_account=>5030, :name=>"VILLAGE CARE MAX", :abbreviation=>"VIL", :type=>"MLTC")
+      DB[:providers].insert(:credit_account=>1222, :fund=>500, :debit_account=>5022, :name=>"AFFINITY HEALTH PLUS", :abbreviation=>"AFF", :type=>"MCO")
+      DB[:providers].insert(:credit_account=>1218, :fund=>500, :debit_account=>5018, :name=>"HEALTH PLUS PHSP,INC", :abbreviation=>"HFS", :type=>"MCO")
+
     end
   end
 end
