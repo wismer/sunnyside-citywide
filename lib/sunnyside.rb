@@ -19,5 +19,9 @@ require 'sunnyside/expiring_auth'
 module Sunnyside
   LOCAL_FILES = ENV["HOME"] + "/sunnyside-files"
   DB = Sequel.connect("sqlite:/#{LOCAL_FILES}/db/sunnyside.db")
+  if DB.tables.empty?
+  	require 'sunnyside/models/db_setup'
+  	Sunnyside.create_tables
+  end
   require 'sunnyside/models/sequel_classes'
 end

@@ -1,5 +1,4 @@
 module Sunnyside
-  DB = Sequel.connect("sqlite://#{LOCAL_FILES}/db/sunnyside-test.db")
   class Auth < Sequel::Model; end
   class Charge < Sequel::Model; end
   class Invoice < Sequel::Model; end
