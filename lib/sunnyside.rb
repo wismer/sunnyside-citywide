@@ -17,14 +17,7 @@ require 'sunnyside/menu'
 require 'sunnyside/expiring_auth'
 
 module Sunnyside
-  folders     = ["835", "837", "summary", "db", "new-ledger", "cash_receipts", "private"]
   LOCAL_FILES = ENV["HOME"] + "/sunnyside-files"
-  puts "checking local folders for appropriate files..."
-  if !Dir.exist?(LOCAL_FILES)
-    puts "Creating folders..."
-    Dir.mkdir(LOCAL_FILES)
-    folders.each { |folder| Dir.mkdir("#{LOCAL_FILES}/#{folder}") }
-  end
   DB = Sequel.connect("sqlite:/#{LOCAL_FILES}/db/sunnyside.db")
   require 'sunnyside/models/sequel_classes'
 end
