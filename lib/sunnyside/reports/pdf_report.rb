@@ -59,104 +59,104 @@ module Sunnyside
   end
 
 
-    def create_pdf
-      puts     "#{Provider[@provider_id].name}: #{Payment[check].check_number}"
-      provider = Provider[@provider_id].name.gsub(/\/|\\/, '')
-      Prawn::Document.generate("./PDF-REPORTS/#{provider}_CHECK_#{Payment[@check].check_number}.pdf", opts) do |pdf|
-        pdf.move_down 50
-        pdf.text "CLAIMS FOR #{Provider[@provider_id].name} - CHECK NUMBER: #{Payment[@check].check_number} - CHECK TOTAL: #{currency(total)}"
-        insert_claim_table(pdf)
-        pdf.move_down 10
-        if !@takeback.empty?
-          pdf.start_new_page
-          pdf.text "TAKE BACK CLAIMS"
-          takeback_claims(pdf) 
-        end
-        page_numbering(pdf)
-      end
-      @takeback   = []
-      @claim_data = []
-    end
+    # def create_pdf
+    #   puts     "#{Provider[@provider_id].name}: #{Payment[check].check_number}"
+    #   provider = Provider[@provider_id].name.gsub(/\/|\\/, '')
+    #   Prawn::Document.generate("./PDF-REPORTS/#{provider}_CHECK_#{Payment[@check].check_number}.pdf", opts) do |pdf|
+    #     pdf.move_down 50
+    #     pdf.text "CLAIMS FOR #{Provider[@provider_id].name} - CHECK NUMBER: #{Payment[@check].check_number} - CHECK TOTAL: #{currency(total)}"
+    #     insert_claim_table(pdf)
+    #     pdf.move_down 10
+    #     if !@takeback.empty?
+    #       pdf.start_new_page
+    #       pdf.text "TAKE BACK CLAIMS"
+    #       takeback_claims(pdf) 
+    #     end
+    #     page_numbering(pdf)
+    #   end
+    #   @takeback   = []
+    #   @claim_data = []
+    # end
 
-    def page_numbering(pdf)
-      pdf.number_pages('Page <page> of <total>', { :at             => [pdf.bounds.right - 150, 0],
-                                                   :width          => 150, 
-                                                   :align          => :center,
-                                                   :start_count_at => 1 
-                                                  }
-        )
-    end
+    # def page_numbering(pdf)
+    #   pdf.number_pages('Page <page> of <total>', { :at             => [pdf.bounds.right - 150, 0],
+    #                                                :width          => 150, 
+    #                                                :align          => :center,
+    #                                                :start_count_at => 1 
+    #                                               }
+    #     )
+    # end
 
-    def insert_claim_table(pdf)
-      @claim_data.each do |c|
-        pdf.move_down 10
-        pdf.table([c], 
-          :column_widths => [65, 75, 65, 65, 65, 150], 
-          :cell_style => {
-                          :align    => :center,
-                          :overflow => :shrink_to_fit,
-                          :size     => 10,
-                          :height   => 30
-                        }) # SHOULD ONLY HAVE ONE CLAIM
-        insert_service_table(c[0], pdf)
-      end
-    end
+    # def insert_claim_table(pdf)
+    #   @claim_data.each do |c|
+    #     pdf.move_down 10
+    #     pdf.table([c], 
+    #       :column_widths => [65, 75, 65, 65, 65, 150], 
+    #       :cell_style => {
+    #                       :align    => :center,
+    #                       :overflow => :shrink_to_fit,
+    #                       :size     => 10,
+    #                       :height   => 30
+    #                     }) # SHOULD ONLY HAVE ONE CLAIM
+    #     insert_service_table(c[0], pdf)
+    #   end
+    # end
 
-    def insert_service_table(claim_id, pdf)
-      make_service_table(claim_id)
-      pdf.table(@service_data, table_opts)
-    end
+    # def insert_service_table(claim_id, pdf)
+    #   make_service_table(claim_id)
+    #   pdf.table(@service_data, table_opts)
+    # end
 
-    def table_opts
-      {
-        :column_widths => [65, 75, 65, 65, 65, 150], 
-        :header => true, 
-        :cell_style => { 
-                          :align    => :center,
-                          :overflow => :shrink_to_fit,
-                          :size     => 8, 
-                          :height   => 20
-                        }
-      }
-    end
+    # def table_opts
+    #   {
+    #     :column_widths => [65, 75, 65, 65, 65, 150], 
+    #     :header => true, 
+    #     :cell_style => { 
+    #                       :align    => :center,
+    #                       :overflow => :shrink_to_fit,
+    #                       :size     => 8, 
+    #                       :height   => 20
+    #                     }
+    #   }
+    # end
 
-    def claim_table(inv)
-      claims(inv).all.each do |clm| 
-        @claim_data << [clm.id, client(inv), inv, currency(clm.billed), currency(clm.paid), response_msg(clm.status), clm.control_number]
-      end
-    end
+    # def claim_table(inv)
+    #   claims(inv).all.each do |clm| 
+    #     @claim_data << [clm.id, client(inv), inv, currency(clm.billed), currency(clm.paid), response_msg(clm.status), clm.control_number]
+    #   end
+    # end
 
-    def response_msg(msg)
-      case msg
-      when '1'  then 'CASH PAYMENT'
-      when '4'  then 'CLAIM DENIED'
-      when '22' then 'TAKE BACK'
-      else
-        'oop'
-      end
-    end
+    # def response_msg(msg)
+    #   case msg
+    #   when '1'  then 'CASH PAYMENT'
+    #   when '4'  then 'CLAIM DENIED'
+    #   when '22' then 'TAKE BACK'
+    #   else
+    #     'oop'
+    #   end
+    # end
 
-    def make_service_table(claim_id)
-      @service_data = []
-      total = 0.0
-      @service_data << ['DATE OF SERVICE', 'SERVICE CODE', 'UNITS', 'BILLED', 'PAID', 'DENIAL REASON']
-      services(claim_id).all.each {|svc| 
-        @service_data << [svc.dos, svc.service_code, svc.units, currency(svc.billed), currency(svc.paid), svc.denial_reason]
-        total += svc.paid
-      }
-      @service_data << ['TOTAL', '', '', '', currency(total), '']
-    end
+    # def make_service_table(claim_id)
+    #   @service_data = []
+    #   total = 0.0
+    #   @service_data << ['DATE OF SERVICE', 'SERVICE CODE', 'UNITS', 'BILLED', 'PAID', 'DENIAL REASON']
+    #   services(claim_id).all.each {|svc| 
+    #     @service_data << [svc.dos, svc.service_code, svc.units, currency(svc.billed), currency(svc.paid), svc.denial_reason]
+    #     total += svc.paid
+    #   }
+    #   @service_data << ['TOTAL', '', '', '', currency(total), '']
+    # end
 
-    def currency(amt)
-      Money.new(amt*100, 'USD').format
-    end
+    # def currency(amt)
+    #   Money.new(amt*100, 'USD').format
+    # end
 
-    def services(claim_id)
-      Service.where(claim_id: claim_id)
-    end
+    # def services(claim_id)
+    #   Service.where(claim_id: claim_id)
+    # end
 
-    def client(invoice_number)
-      Invoice.where(invoice_number: invoice_number).get(:client_name)
-    end
-  end
+    # def client(invoice_number)
+    #   Invoice.where(invoice_number: invoice_number).get(:client_name)
+    # end
+  # end
 end
