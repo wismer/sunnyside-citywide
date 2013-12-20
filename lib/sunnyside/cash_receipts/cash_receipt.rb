@@ -77,16 +77,20 @@ module Sunnyside
       @manual_invs              = self.invoice_numbers
     end
 
+    def provider
+      Provider.where(abbreviation: prov).first
+    end
+
     def payment_id
       if check_exists?
-        Payment.where(check_number: check, post_date: post_date).get(:id)
+        Payment.where(check_number: check, post_date: post_date, provider_id: provider.id).get(:id)
       else
-        Payment.insert(check_number: check, post_date: post_date)
+        Payment.insert(check_number: check, post_date: post_date, provider_id: provider.id)
       end
     end
 
     def check_exists?
-      Payment.where(check_number: check, post_date: post_date).count > 0
+      Payment.where(check_number: check, post_date: post_date, provider_id: provider.id).count > 0
     end
 
     def date
@@ -95,7 +99,7 @@ module Sunnyside
 
     def map_claims_and_services
       manual_invs.each { |inv| 
-        invoice         = Invoice[invoice.gsub(/-d/, '')]
+        invoice         = Invoice[inv.gsub(/-d/, '')]
         claim_id        = create_claim(invoice)
         create_services(invoice, claim_id)
       }
@@ -176,6 +180,13 @@ module Sunnyside
 
     def visits(invoice)
       Visit.where(invoice_id: invoice.invoice_number).all
+    end
+
+    class EditServices < ManualPayment::CashReceipt
+      attr_reader :invoice
+      def initialize(invoice)
+        
+      end
     end
   end
 end
