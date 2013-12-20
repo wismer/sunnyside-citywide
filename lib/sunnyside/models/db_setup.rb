@@ -32,6 +32,7 @@ module Sunnyside
         foreign_key   :provider_id, :providers
         foreign_key   :filelib_id, :filelibs
         Float         :check_total
+        Date          :post_date, :default=>Date.today
         String        :status
         Integer       :check_number
       end
@@ -117,7 +118,17 @@ module Sunnyside
         Date        :start_date
         Date        :end_date
       end
+    end
 
+    def add_clients
+      TT[:clients].all.each { |client| 
+        if DB[:clients].where(client_number: client[:med_id]).count == 0 
+          DB[:clients].insert(client_number: client[:med_id])
+        end
+      }
+    end
+
+    def add_providers
       DB[:providers].insert(:credit_account=>1206, :fund=>500, :debit_account=>5005, :name=>"AMERIGROUP 2", :abbreviation=>"AMG", :type=>"MCO")
       DB[:providers].insert(:credit_account=>1207, :fund=>300, :debit_account=>5007, :name=>"CHILDREN'S AID SOCIETY", :abbreviation=>"CAS", :type=>"MLTC")
       DB[:providers].insert(:credit_account=>1226, :fund=>300, :debit_account=>5026, :name=>"COMPREHENSIVE CARE MANAGEMENT", :abbreviation=>"CCM", :type=>"MLTC")
@@ -142,14 +153,6 @@ module Sunnyside
       DB[:providers].insert(:credit_account=>1310, :fund=>300, :debit_account=>5030, :name=>"VILLAGE CARE MAX", :abbreviation=>"VIL", :type=>"MLTC")
       DB[:providers].insert(:credit_account=>1222, :fund=>500, :debit_account=>5022, :name=>"AFFINITY HEALTH PLUS", :abbreviation=>"AFF", :type=>"MCO")
       DB[:providers].insert(:credit_account=>1218, :fund=>500, :debit_account=>5018, :name=>"HEALTH PLUS PHSP,INC", :abbreviation=>"HFS", :type=>"MCO")
-
-      def add_clients
-        TT[:clients].all.each { |client| 
-          if DB[:clients].where(client_number: client[:med_id]).count == 0 
-            DB[:clients].insert(client_number: client[:med_id])
-          end
-        }
-      end
     end
   end
 end

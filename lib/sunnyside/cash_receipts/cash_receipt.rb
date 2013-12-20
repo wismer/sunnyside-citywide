@@ -1,18 +1,24 @@
 module Sunnyside
 
   def payment_type
-    puts 'Type of Payment? (EDI or MANUAL)'
-    return gets.chomp.upcase == 'EDI' ? EdiPayment.new : ManualPayment.new
+    puts "1.) EDI PAYMENT"
+    puts "2.) MANUAL PAYMENT"
+    return gets.chomp.upcase == '1' ? EdiPayment.new : ManualPayment.new
   end
 
-  def check_number_and_date
-    puts 'Enter in check number followed by the post date (separated by a space - ex: 235345 10/12/2013): '
-    return gets.chomp.split(' ')
+  def check_date_abbre
+    puts 'Enter in check number, post date and then followed by the provider abbreviation (separated by a space - ex: 235345 10/12/2013 WEL): '
+    ans = gets.chomp.split
+    if ans.size == 3
+      return ans
+    else
+      raise 'You need to enter in the specified fields.'
+    end
   end
 
   def invoice_numbers
     puts 'Enter in invoices, each separated by a space. If an invoice contains any denials, flag it by typing in a "-d" right after the last number. '
-    return gets.chomp.split(' ')
+    return gets.chomp.split
   end
 
   class CashReceipt
@@ -29,10 +35,10 @@ module Sunnyside
 
   class EdiPayment
     include Sunnyside
-    attr_reader :check_number, :post_date
+    attr_reader :check_number, :post_date, :prov
 
     def initialize
-      @check_number, @post_date = self.check_number_and_date
+      @check_number, @post_date, @prov = self.check_date_abbre
     end
 
     def invoices
@@ -64,23 +70,23 @@ module Sunnyside
   end
 
   class ManualPayment < CashReceipt
-    attr_reader :check, :manual_invs, :post_date
+    attr_reader :check, :manual_invs, :post_date, :prov
 
     def initialize
-      @check, @post_date = self.check_number_and_date
-      @manual_invs       = self.invoice_numbers
+      @check, @post_date, @prov = self.check_date_abbre
+      @manual_invs              = self.invoice_numbers
     end
 
     def payment_id
       if check_exists?
-        Payment.where(check_number: check).get(:id)
+        Payment.where(check_number: check, post_date: post_date).get(:id)
       else
-        Payment.insert(check_number: check)
+        Payment.insert(check_number: check, post_date: post_date)
       end
     end
 
     def check_exists?
-      Payment.where(check_number: check).count > 0
+      Payment.where(check_number: check, post_date: post_date).count > 0
     end
 
     def date
@@ -99,7 +105,7 @@ module Sunnyside
       map_claims_and_services
       manual_invs.each { |inv|
         if denial_present?(inv)
-          edit_services(inv) 
+          edit_services(inv)
         else
           self.receivable_csv(invoice, payment_id, check, post_date)
         }
