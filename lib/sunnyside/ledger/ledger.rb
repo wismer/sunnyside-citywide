@@ -101,6 +101,7 @@ module Sunnyside
       def finalize
         if !client_missing? 
           add_invoice
+          update_client if new_provider?
         else 
           add_client
           finalize
@@ -111,13 +112,21 @@ module Sunnyside
         Client[client_id].nil?
       end
 
+      def new_provider?
+        Client[client_id].provider_id != provider.id
+      end
+
+      def update_client
+        Client[client_id].update(provider_id: provider.id, type: provider.type)
+      end
+
       def fund_id
-        print "Enter in the FUND EZ ID for this client."
+        print "Enter in the FUND EZ ID for this client: #{client_name.strip} of #{provider.name}. "
         return gets.chomp
       end
 
       def add_client
-        Client.insert(client_number: client_id, client_name: client_name, fund_id: fund_id, provider_id: provider.id, type: provider.type)
+        Client.insert(client_number: client_id, client_name: client_name.strip, fund_id: fund_id, provider_id: provider.id, type: provider.type)
       end
 
       # rarely there may be an invoice line that contains an invoice number that already exists. This method accounts for it, by merely updating the amount.

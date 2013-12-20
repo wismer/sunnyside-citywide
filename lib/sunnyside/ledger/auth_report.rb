@@ -16,7 +16,7 @@ module Sunnyside
     attr_reader :client_line, :visits
 
     def initialize(entry)
-      @client_line = entry.split(/\n/).select { |line| line =~ /(NY|\s+)\s+001/ }
+      @client_line = entry.split(/\n/).select { |line| line =~ /\s+001\s+/ }
       @visits      = entry.split(/\n/).select { |line| line =~ /^\d{6}/         }
     end
 
@@ -45,33 +45,7 @@ module Sunnyside
 
     # only the invoices lines and the client info line gets selected and passed onto the next object level
   end
-  class ClientData < ParseInvoice
-    attr_reader :client_id, :service_id, :recipient_id, :authorization
 
-    def initialize(client)
-      @client_id, @service_id, @recipient_id, @authorization = client.map { |line| line.strip }
-    end
-
-    def show_me
-      puts "#{client_id} #{service_id} #{recipient_id} #{authorization}"
-    end
-
-    def client_number
-      if client_exists?
-        client_id
-      else
-        insert_client
-      end
-    end
-
-    def client_exists?
-      Client.where(client_number: client_id).count > 0
-    end
-
-    def insert_client
-      Client.insert(client_number: client_id)
-    end
-  end
 
   class InvoiceDetail < ParseInvoice
     attr_reader :invoice, :service_code, :modifier, :dos, :units, :amount, :client
@@ -84,10 +58,6 @@ module Sunnyside
       @dos          = invoice_line[:dos]
       @units        = invoice_line[:units]
       @amount       = invoice_line[:amount]
-    end
-
-    def show
-      puts "#{invoice} #{service_code} #{modifier} #{dos} #{units} #{amount} #{client.show_me}"
     end
 
     def to_db
@@ -104,7 +74,27 @@ module Sunnyside
     end
 
     def update_invoice
-      Invoice[invoice].update(:authorization => client.authorization, :recipient_id => client.recipient_id)
+      Invoice[invoice].update(:auth => client.authorization, :recipient_id => client.recipient_id)
+    end
+  end
+
+  class ClientData < ParseInvoice
+    attr_reader :client_id, :service_id, :recipient_id, :authorization
+
+    def initialize(client)
+      @client_id, @service_id, @recipient_id, @authorization = client.map { |line| line.strip }
+    end
+
+    def client_number
+      if client_missing?
+        puts 'how the hell is it happening? ' + client_id
+      else
+        client_id
+      end
+    end
+
+    def client_missing?
+      Client[client_id].nil?
     end
   end
 end

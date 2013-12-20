@@ -20,9 +20,11 @@ module Sunnyside
         foreign_key   :client_id, :clients
         foreign_key   :provider_id, :providers
         foreign_key   :filelib_id, :filelibs
+        String        :auth
         String        :client_name
         Float         :rate
         Float         :hours
+        String        :recipient_id
       end
 
       DB.create_table :payments do 
@@ -68,7 +70,7 @@ module Sunnyside
         String        :client_name
         String        :fund_id
         String        :recipient_id
-        foreign_key   :payment_id, :payments
+        foreign_key   :provider_id, :providers
         String        :type, :default=>'MLTC'
       end
 
@@ -108,7 +110,8 @@ module Sunnyside
       end
       
       DB.create_table :authorizations do 
-        String      :auth, :primary_key=>true
+        primary_key :id
+        String      :auth
         foreign_key :client_id, :clients
         Integer     :service_id
         Date        :start_date
@@ -140,6 +143,13 @@ module Sunnyside
       DB[:providers].insert(:credit_account=>1222, :fund=>500, :debit_account=>5022, :name=>"AFFINITY HEALTH PLUS", :abbreviation=>"AFF", :type=>"MCO")
       DB[:providers].insert(:credit_account=>1218, :fund=>500, :debit_account=>5018, :name=>"HEALTH PLUS PHSP,INC", :abbreviation=>"HFS", :type=>"MCO")
 
+      def add_clients
+        TT[:clients].all.each { |client| 
+          if DB[:clients].where(client_number: client[:med_id]).count == 0 
+            DB[:clients].insert(client_number: client[:med_id])
+          end
+        }
+      end
     end
   end
 end
