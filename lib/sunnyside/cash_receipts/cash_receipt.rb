@@ -64,11 +64,11 @@ module Sunnyside
   end
 
   class ManualPayment < CashReceipt
-    attr_reader :check, :invoices, :post_date
+    attr_reader :check, :manual_invs, :post_date
 
     def initialize
       @check, @post_date = self.check_number_and_date
-      @invoices          = self.invoice_numbers
+      @manual_invs       = self.invoice_numbers
     end
 
     def payment_id
@@ -87,12 +87,20 @@ module Sunnyside
       Date.strptime(post_date, '%m/%d/%Y')
     end
 
+    def map_claims_and_services
+      manual_invs.each { |inv| 
+        invoice         = Invoice[invoice.gsub(/-d/, '')]
+        claim_id        = create_claim(invoice)
+        create_services(invoice, claim_id)
+      }
+    end
+
     def collate
-      invoices.each { |inv|
-        invoice_data(inv) { |invoice| 
-          claim_id = create_claim(invoice)
-          create_services(invoice, claim_id)
-          edit_services(inv) if denial_present?(inv)
+      map_claims_and_services
+      manual_invs.each { |inv|
+        if denial_present?(inv)
+          edit_services(inv) 
+        else
           self.receivable_csv(invoice, payment_id, check, post_date)
         }
       }
@@ -105,12 +113,11 @@ module Sunnyside
 
     def create_claim(invoice)
       Claim.insert(
-        :invoice_id   => invoice.invoice_number, 
+        :invoice_id   => invoice.id, 
         :client_id    => invoice.client_id, 
         :billed       => invoice.amount, 
         :paid         => 0.0, 
         :payment_id   => payment_id, 
-        :check_number => check, 
         :provider_id  => invoice.provider_id
       )
     end
@@ -126,6 +133,7 @@ module Sunnyside
           :billed       => visit.amount, 
           :dos          => visit.dos,
           :units        => visit.units 
+          :client_id    => Claim[claim_id].client_id
         )
       }
     end
@@ -133,8 +141,6 @@ module Sunnyside
     def visits(invoice)
       Visit.where(invoice_id: invoice.invoice_number).all
     end
-
-
 
     def services(inv)
       Service.where(payment_id: payment_id, invoice_id: inv)
