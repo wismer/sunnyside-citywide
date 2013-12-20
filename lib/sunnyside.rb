@@ -17,7 +17,6 @@ require 'sunnyside/menu'
 require 'sunnyside/expiring_auth'
 
 module Sunnyside
-
   # doesn't work on some Windows machines
   LOCAL_FILES = ENV["HOME"] + "/sunnyside-files"
   DB = Sequel.connect("sqlite:/#{LOCAL_FILES}/db/sunnyside.db")
@@ -25,11 +24,11 @@ module Sunnyside
   # Second database for copying old data
 
   if DB.tables.empty?
-  	require 'sunnyside/models/db_setup'
+    require 'sunnyside/models/db_setup'
     TT = Sequel.connect("sqlite:/#{LOCAL_FILES}/db/project.db")
-  	Sunnyside.create_tables
+    Sunnyside.create_tables
     Sunnyside.add_providers
-  	Sunnyside.add_clients
+    Sunnyside.add_clients
   end
   require 'sunnyside/models/sequel_classes'
 end
