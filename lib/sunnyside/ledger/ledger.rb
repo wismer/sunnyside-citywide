@@ -40,7 +40,7 @@ module Sunnyside
     include Sunnyside
     attr_reader :page_data, :provider, :post_date
 
-    def initialize(page_data, file, provider = nil)
+    def initialize(page_data, file)
       @provider  = page_data[/CUSTOMER:\s+(.+)(?=\)')/, 1]
       @post_date = Date.parse(file[0..7])
       @page_data = page_data.split(/\n/).select { |line| line =~ /^\([0-9\/]+\s/ }
@@ -53,11 +53,11 @@ module Sunnyside
       if provider_missing?
         case provider
         when 'ELDERSERVEHEALTH'
-          Provider.where(name: 'ELDERSERVE HEALTH').first
+          Provider[5]
         when 'AMERIGROUP'
-          Provider.where(name: 'AMERIGROUP 2').first
+          Provider[1]
         else 
-          Provider.where(name: 'PRIVATE').first        
+          Provider[16]     
         end
       else
         Provider.where(name: provider).first
@@ -111,8 +111,13 @@ module Sunnyside
         Client[client_id].nil?
       end
 
+      def fund_id
+        print "Enter in the FUND EZ ID for this client."
+        return gets.chomp
+      end
+
       def add_client
-        Client.insert(client_number: client_id, client_name: client_name)
+        Client.insert(client_number: client_id, client_name: client_name, fund_id: fund_id, provider_id: provider.id, type: provider.type)
       end
 
       # rarely there may be an invoice line that contains an invoice number that already exists. This method accounts for it, by merely updating the amount.
@@ -127,15 +132,15 @@ module Sunnyside
       end
 
       def invoice_exist?
-        Invoice.where(invoice_number: invoice).count > 0
+        !Invoice[invoice].nil?
       end
 
       def update_invoice
-        Invoice.where(invoice_number: invoice).update(amount: amt.to_f)
+        Invoice[invoice].update(amount: amt.to_f)
       end
 
       def prev_amt
-        Invoice.where(invoice_number: invoice).get(:amount)
+        Invoice[invoice].amount
       end
     end
   end

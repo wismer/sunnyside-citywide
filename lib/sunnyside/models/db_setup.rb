@@ -68,6 +68,8 @@ module Sunnyside
         String        :client_name
         String        :fund_id
         String        :recipient_id
+        foreign_key   :payment_id, :payments
+        String        :type, :default=>'MLTC'
       end
 
       DB.create_table :providers do 
@@ -103,6 +105,14 @@ module Sunnyside
       DB.create_table :denials do 
         primary_key :denial_code, :primary_key=>true
         String      :denial_explanation
+      end
+      
+      DB.create_table :authorizations do 
+        String      :auth, :primary_key=>true
+        foreign_key :client_id, :clients
+        Integer     :service_id
+        Date        :start_date
+        Date        :end_date
       end
 
       DB[:providers].insert(:credit_account=>1206, :fund=>500, :debit_account=>5005, :name=>"AMERIGROUP 2", :abbreviation=>"AMG", :type=>"MCO")
