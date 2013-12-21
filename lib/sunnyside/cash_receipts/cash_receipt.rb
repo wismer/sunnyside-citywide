@@ -97,22 +97,13 @@ module Sunnyside
       Date.strptime(post_date, '%m/%d/%Y')
     end
 
-    def map_claims_and_services
+    def collate
       manual_invs.each { |inv| 
         invoice         = Invoice[inv.gsub(/-d/, '')]
         claim_id        = create_claim(invoice)
         create_services(invoice, claim_id)
-      }
-    end
-
-    def collate
-      map_claims_and_services
-      manual_invs.each { |inv|
-        if denial_present?(inv)
-          edit_services(inv)
-        else
-          self.receivable_csv(invoice, payment_id, check, post_date)
-        }
+        edit_services(claim_id) if denial_present?(inv)
+        self.receivable_csv(invoice, payment_id, check, post_date)
       }
     end
 
@@ -157,20 +148,10 @@ module Sunnyside
     end
 
     def edit_services(inv)
-      invoice = inv.gsub(/-d/, '').to_i
-      print "Select the day you wish to edit by the corresponding number followed by the adjusted amount\n"
-      print "When you are finished, type 'done'."
-      print "(e.g. 3451 23.50) Enter in the number now: "
+      service = EditServices.new(inv, payment_id)
       loop do 
-        services(invoice).all.each { |svc| puts "#{svc.id} #{svc.dos} #{svc.service_code} #{svc.modifier} #{svc.paid}" }
-        id, adjusted_amt = gets.chomp.split
-        if !id.nil?
-          print "Type in the denial reason now: "
-          denial_reason = gets.chomp
-          Service[id].update(paid: adjusted_amt, denial_reason: denial_reason)
-        else 
-          break
-        end
+        service.show_all
+        service.adjust
       end
     end
 
@@ -183,9 +164,29 @@ module Sunnyside
     end
 
     class EditServices < ManualPayment::CashReceipt
-      attr_reader :invoice
-      def initialize(invoice)
-        
+      attr_reader :claim
+
+      def initialize(claim_id)
+        @claim    = Claim[claim_id]
+        @services = Service.where(claim_id: claim_id).all
+      end
+
+      def show_all
+        services.each { |svc| puts "ID: #{svc.id} #{svc.dos} #{svc.amount}" }
+      end
+
+      def adjust
+        print "Type in the Service ID # to change the amount: "
+        id     = gets.chomp
+        print "You selected #{id} - Type in the adjusted amount: "
+        amt    = gets.chomp
+        print "And now type in the denial reason: "
+        reason = gets.chomp
+        adjust_service(id, amt, reason)
+      end
+
+      def adjust_service
+        Service[id].update(paid: amt, denial_reason: reason)
       end
     end
   end
