@@ -1,6 +1,14 @@
 module Sunnyside
   class << self
     def create_tables
+      DB.create_table :logins do 
+        primary_key :id
+        String      :site
+        String      :username
+        String      :password
+        String      :provider
+      end
+
       DB.create_table :charges do 
         primary_key   :id
         foreign_key   :invoice_id, :invoices
@@ -126,6 +134,9 @@ module Sunnyside
           DB[:clients].insert(client_number: client[:med_id])
         end
       }
+    end
+
+    def add_ftp_data
     end
 
     def add_providers

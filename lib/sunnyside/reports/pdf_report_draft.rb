@@ -22,26 +22,31 @@ module Sunnyside
     end
 
     def denials_present?
-      claims.where('amount_charged > amount_paid').exclude(denial_reason: '22').count > 0 
+      claims.where(denial_reason: '4').count > 0
     end
 
     def create_pdf
       Prawn::Document.generate("#{provider}_CHECK_#{check}.pdf", :page_layout => :landscape) do |pdf| 
-        report = ReportPDF.new(pdf, :claim_data => claims, :service_data => services, :provider => provider, :check => check)
+        report = ReportPDF.new(
+                  pdf, 
+                  { :claim_data => claims, 
+                    :service_data => services, 
+                    :provider => provider, 
+                    :check => check 
+                  })
+
         report.create_check_header
+        report.claim_table
         if takeback_present?
           report.takeback_table
         elsif denials_present?
           report.denial_table
-        else
-          report.claim_table
         end
       end
     end
   end
   class ReportPDF
     attr_reader :pdf, :claims, :services, :provider, :check
-
     def initialize(pdf, data = {})
       @pdf      = pdf
       @claims   = data[:claim_data]
@@ -77,13 +82,24 @@ module Sunnyside
     end
 
     def denial_table
+      pdf.start_new_page
+      pdf.move_down 10
       pdf.text 'CLAIMS WITH DENIALS'
       pdf.move_down 10
+      claims.where(denial_reason: '4').all.each { |clm| claim_header(clm) }
     end
 
     def takeback_header
+      pdf.start_new_page
+      pdf.move_down 10
       pdf.text 'ADJUSTED CLAIMS'
       pdf.move_down 10
+      claims.where(denial_reason: '22').all.each { |clm| claim_header(clm) }
+    end
+
+    def table_create
+      pdf.text 'asdasds'
+      and_this_too_please
     end
 
     def client(inv)
@@ -91,37 +107,41 @@ module Sunnyside
     end
 
     def claim_header(claim)
+      puts claim.control_number
       pdf.move_down 10
       claim_data = [[claim.control_number, client(claim.invoice_number), claim.invoice_number, currency(claim.amount_charged), currency(claim.amount_paid), claim.denial_reason]]
-      pdf.table(
-        claim_data, 
-        :column_widths => [85, 75, 75, 75, 75, 150], :cell_style => {
-          :align    => :center,
-          :overflow => :shrink_to_fit,
-          :size     => 12,
-          :height   => 30
-        }) # SHOULD ONLY HAVE ONE CLAIM
+      pdf.table(claim_data, :column_widths => [85, 75, 75, 75, 75, 150], :cell_style => {
+                                                                                        :align => :center,
+                                                                                        :overflow => :shrink_to_fit,
+                                                                                        :size => 12,
+                                                                                        :height => 30
+                                                                                      }) # SHOULD ONLY HAVE ONE CLAIM
       pdf.move_down 10
       create_service_table(claim.id)
     end
 
     def service_data(id)
-      services.where(claim_id: id).map { |svc| ['', svc.dos, svc.service_code + svc.mod_1, svc.units, svc.amount_charged, svc.amount_paid, svc.denial_reason] }
+      services.where(claim_id: id).map { |svc| ['', svc.dos, svc_code(svc), svc.units, currency(svc.amount_charged), currency(svc.amount_paid), svc.denial_reason] }
+    end
+
+    def svc_code(svc)
+      if svc.mod_1
+        svc.service_code + ':' + svc.mod_1
+      else
+        svc.service_code
+      end
     end
 
     def create_service_table(id)
-      pdf.table(service_data(id), 
-        :column_widths => [85, 75, 75, 75, 75, 150], 
-        :cell_style => {
-          :align    => :center,
-          :overflow => :shrink_to_fit,
-          :size     => 12,
-          :height   => 30
-        }) # SHOULD ONLY HAVE ONE CLAIM
+      pdf.table(service_data(id), :column_widths => [85, 75, 75, 75, 75, 150], :cell_style => {
+                                                                                  :align => :center,
+                                                                                  :overflow => :shrink_to_fit,
+                                                                                  :size => 12,
+                                                                                  :height => 30
+                                                                                }) # SHOULD ONLY HAVE ONE CLAIM
     end
 
     def claim_table
       claims.exclude(denial_reason: ['22', '4']).all.each { |clm| claim_header(clm) }
     end
   end
-end

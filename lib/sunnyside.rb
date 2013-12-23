@@ -28,6 +28,7 @@ module Sunnyside
     TT = Sequel.connect("sqlite:/#{LOCAL_FILES}/db/project.db")
     Sunnyside.create_tables
     Sunnyside.add_providers
+    Sunnyside.add_ftp_data
     Sunnyside.add_clients
   end
   require 'sunnyside/models/sequel_classes'
