@@ -133,7 +133,7 @@ module Sunnyside
           :paid         => visit.amount, 
           :billed       => visit.amount, 
           :dos          => visit.dos,
-          :units        => visit.units 
+          :units        => visit.units,
           :client_id    => Claim[claim_id].client_id
         )
       }
