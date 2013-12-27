@@ -74,7 +74,11 @@ module Sunnyside
     end
 
     def update_invoice
-      Invoice[invoice].update(:auth => client.auth, :recipient_id => client.recipient_id)
+      Invoice[invoice].update(:auth => auth, :recipient_id => client.recipient_id)
+    end
+
+    def auth
+      client.authorization
     end
   end
 
