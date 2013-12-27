@@ -20,12 +20,11 @@ module Sunnyside
     end
 
     def run
-      mco_total = 0.0
+      mco_total  = 0.0
       mltc_total = 0.0
       invoices.each do |inv|
         if inv[:type] == 'MCO'
           mco_total += inv[:hours]
-          # mco_total  += inv.hours
         elsif inv[:type] == 'MLTC'  
           mltc_total += inv[:hours]
         end

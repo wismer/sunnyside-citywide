@@ -74,7 +74,7 @@ module Sunnyside
     end
 
     def update_invoice
-      Invoice[invoice].update(:auth => client.authorization, :recipient_id => client.recipient_id)
+      Invoice[invoice].update(:auth => client.auth, :recipient_id => client.recipient_id)
     end
   end
 
@@ -91,6 +91,10 @@ module Sunnyside
       else
         client_id
       end
+    end
+
+    def auth
+      authorization
     end
 
     def client_missing?
