@@ -99,10 +99,16 @@ module Sunnyside
 
     def collate
       manual_invs.each { |inv| 
-        invoice         = Invoice[inv.gsub(/-d/, '')]
-        claim_id        = create_claim(invoice)
+        # manual invoice number is matched with what is in the DB
+        invoice  ||= Invoice[inv.gsub(/-d/, '')]
+        # claim is then created and saved to the DB; the ID for the particular claim created is saved as claim_id
+        claim_id = create_claim(invoice)
+        # service entries are created by duplicating the visits that were originally charged
         create_services(invoice, claim_id)
+        # if a -d is present in ( inv ), the invoice is then marked as denied (or the payment amount doesnt match the billed)
+        # services that have foreign_key = claim_id, are then shown the user, which are then edited.
         edit_services(claim_id) if denial_present?(inv)
+        # after that, the payments are then finalized and posted to the csv file creator for importing into FUND EZ
         self.receivable_csv(invoice, payment_id, check, post_date)
       }
     end
