@@ -23,7 +23,7 @@ module Sunnyside
         when '4' 
           Sunnyside::Report.new
         when '5' 
-          Sunnyside::CashReceipt.new.process
+          Sunnyside.cash_receipt
         when '6'
           Sunnyside.access_ftp(:download)
           Sunnyside.access_ftp(:upload)

@@ -1,9 +1,16 @@
 module Sunnyside
 
-  def payment_type
+  def self.cash_receipt
     puts "1.) EDI PAYMENT"
     puts "2.) MANUAL PAYMENT"
-    return gets.chomp.upcase == '1' ? EdiPayment.new : ManualPayment.new
+    payment = 
+      case gets.chomp
+      when '1'
+        EdiPayment.new
+      when '2'
+        ManualPayment.new
+      end
+    payment.collate
   end
 
   def check_date_abbre
@@ -19,18 +26,6 @@ module Sunnyside
   def invoice_numbers
     puts 'Enter in invoices, each separated by a space. If an invoice contains any denials, flag it by typing in a "-d" right after the last number. '
     return gets.chomp.split
-  end
-
-  class CashReceipt
-    include Sunnyside
-    attr_reader :type
-    def initialize
-      @type = self.payment_type
-    end
-
-    def process
-      type.collate
-    end
   end
 
   class EdiPayment

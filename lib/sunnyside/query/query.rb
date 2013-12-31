@@ -1,7 +1,6 @@
 # definitely a work in progress.
 
 module Sunnyside
-
   class Query
     attr_reader :client
     def initialize
