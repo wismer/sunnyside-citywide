@@ -2,14 +2,15 @@ module Sunnyside
   class Menu
     def start
       loop do 
-        puts "1.) LEDGER IMPORT"
-        puts "2.) EDI IMPORT"
-        puts "3.) 837 IMPORT"
-        puts "4.) A/R REPORT"
-        puts "5.) CASH RECEIPT IMPORT"
-        puts "6.) ACCESS FTP"
-        puts "7.) EXPIRING AUTHORIZATION REPORT"
-        puts "9.) MCO - MLTC HOURS UPDATE"
+        puts " 1.) LEDGER IMPORT"
+        puts " 2.) EDI IMPORT"
+        puts " 3.) 837 IMPORT"
+        puts " 4.) A/R REPORT"
+        puts " 5.) CASH RECEIPT IMPORT"
+        puts " 6.) ACCESS FTP"
+        puts " 7.) EXPIRING AUTHORIZATION REPORT"
+        puts " 9.) MCO - MLTC HOURS UPDATE"
+        puts "10.) CUSTOM QUERY"
         print "select option: "
         case gets.chomp
         when '1' 
@@ -32,6 +33,8 @@ module Sunnyside
           Sunnyside.process_private
         when '9'
           Sunnyside.run_mco_mltc
+        when '10'
+          Sunnyside.query
         else
           exit
         end
