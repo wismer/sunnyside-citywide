@@ -80,7 +80,7 @@ module Sunnyside
         String        :fund_id
         String        :recipient_id
         foreign_key   :provider_id, :providers
-        String        :type, :default=>'MLTC'
+        String        :prov_type, :default=>'MLTC'
       end
 
       DB.create_table :providers do 
@@ -90,7 +90,7 @@ module Sunnyside
         Integer       :debit_account
         String        :name
         String        :abbreviation
-        String        :type
+        String        :prov_type
         String        :edi_identifier
       end
 
