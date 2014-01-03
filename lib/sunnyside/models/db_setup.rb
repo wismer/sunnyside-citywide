@@ -129,9 +129,11 @@ module Sunnyside
     end
 
     def add_clients
-      TT[:clients].all.each { |client| 
+      TT[:clients].exclude(med_id: nil).all.each { |client| 
         if DB[:clients].where(client_number: client[:med_id]).count == 0 
-          DB[:clients].insert(client_number: client[:med_id])
+          provider         = TT[:invoices].where(service_number: client[:med_id]).all.last[:provider]
+          current_provider = DB[:providers].where(name: provider).first[:id] 
+          DB[:clients].insert(client_number: client[:med_id], fund_id: client[:fund_id], provider_id: current_provider)
         end
       }
     end

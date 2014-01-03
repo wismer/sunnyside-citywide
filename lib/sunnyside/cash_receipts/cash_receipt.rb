@@ -64,7 +64,7 @@ module Sunnyside
     end
   end
 
-  class ManualPayment < CashReceipt
+  class ManualPayment
     attr_reader :check, :manual_invs, :post_date, :prov
 
     def initialize
@@ -164,7 +164,7 @@ module Sunnyside
       Visit.where(invoice_id: invoice.invoice_number).all
     end
 
-    class EditServices < ManualPayment::CashReceipt
+    class EditServices
       attr_reader :claim
 
       def initialize(claim_id)

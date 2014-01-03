@@ -18,8 +18,16 @@ require 'sunnyside/expiring_auth'
 
 module Sunnyside
   # doesn't work on some Windows machines
-  LOCAL_FILES = ENV["HOME"] + "/sunnyside-files"
-  DB = Sequel.connect("sqlite:/#{LOCAL_FILES}/db/sunnyside.db")
+  LOCAL_FILES = 'C:/sunnyside-files'
+  if !Dir.exist?(LOCAL_FILES)
+    ['db', '835', '837', '']
+    Dir.mkdir('C:/')
+  # Instead of creating a new DB, the gem will assume you already have one created
+  # and have already seeded the DB with provider and client data
+
+  # raise 'Database file missing!' if File.exist?("#{LOCAL_FILES}/db/sunnyside.db") 
+
+  DB = Sequel.connect("sqlite:/#{LOCAL_FILES}/db/sunnyside.db")  
 
   # Second database for copying old data
 
