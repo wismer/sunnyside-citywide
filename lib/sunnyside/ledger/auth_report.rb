@@ -4,11 +4,13 @@ module Sunnyside
   # report page by page, it would be best to compress the text from every page into a single string and then parse from there.
 
   def self.parse_pdf
-    Dir["#{LOCAL_FILES}/837/*.PDF"].select { |file| Filelib.where(filename: file).count == 0 }.each do |file|
+    files = Dir["#{DRIVE}/sunnyside-files/837/*.PDF", "#{DRIVE}/sunnyside-files/837/*.pdf"].select { |file| Filelib.where(filename: file).count == 0 }
+    files.each do |file|
       puts "processing #{file}..."
       data = PDF::Reader.new(file).pages.map { |page| page.raw_content.gsub(/^\(\s|\)'$/, '') }.join
       data.split(/^\((?=REG\s+LOC)/).each { |entry| ParseInvoice.new(entry).process } 
       Filelib.insert(filename: file, purpose: '837')
+      FileUtils.mv(file, "#{DRIVE}/sunnyside-files/837/archive/#{File.basename(file)}")
     end
   end
 
@@ -16,14 +18,15 @@ module Sunnyside
     attr_reader :client_line, :visits
 
     def initialize(entry)
-      @client_line = entry.split(/\n/).select { |line| line =~ /\s+001\s+/ }
-      @visits      = entry.split(/\n/).select { |line| line =~ /^\d{6}/         }
+      @client_line = entry.split(/\n/).select { |line| line =~ /\s+001\s+/ }[0]
+      @visits      = entry.split(/\n/).select { |line| line =~ /^\d{6}/    }
     end
 
     def invoice_lines
+      client_data
       visits.map { |inv| 
           InvoiceDetail.new(
-            client_data, 
+            client_line, 
             { :invoice  => inv[0..5], 
               :svc_code => inv[18..22], 
               :modifier => inv[25..30], 
@@ -34,9 +37,10 @@ module Sunnyside
       }
     end
 
+    # removes the client name from the line
 
     def client_data
-      client_line.map { |line| ( line.slice(9..28) + line.slice(66..120) ).split }[0]
+      client_line.slice!(27..52)
     end
 
     def process
@@ -74,19 +78,15 @@ module Sunnyside
     end
 
     def update_invoice
-      Invoice[invoice].update(:auth => auth, :recipient_id => client.recipient_id)
-    end
-
-    def auth
-      client.authorization
+      Invoice[invoice].update(:auth => client.authorization, :recipient_id => client.recipient_id, service_number: client.service_id)
     end
   end
 
   class ClientData < ParseInvoice
-    attr_reader :client_id, :service_id, :recipient_id, :authorization
+    attr_reader :client_id, :service_id, :recipient_id, :authorization, :dob
 
     def initialize(client)
-      @client_id, @service_id, @recipient_id, @authorization = client.map { |line| line.strip }
+      @client_id, @service_id, @dob, @recipient_id, @authorization = client.split.map { |line| line.strip }
     end
 
     def client_number
@@ -97,12 +97,16 @@ module Sunnyside
       end
     end
 
-    def auth
-      authorization
+    def client_missing?
+      client.nil?
     end
 
-    def client_missing?
-      Client[client_id].nil?
+    def client
+      Client[client_id]
+    end
+
+    def update_dob
+      client.update(dob: Date.strftime(dob, '%m/%d/%y'))
     end
   end
 end

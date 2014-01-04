@@ -2,17 +2,21 @@ require 'prawn'
 module Sunnyside
   # This should be redone.
   def self.ledger_file
-    Dir["#{LOCAL_FILES}/summary/*.PDF", "#{LOCAL_FILES}/summary/*.pdf"].each {|file| 
+    Dir["#{DRIVE}/sunnyside-files/summary/*.PDF", "#{DRIVE}/sunnyside-files/summary/*.pdf"].each {|file| 
       if Filelib.where(filename: file).count == 0 
         puts "processing #{file}..."
         ledger = Ledger.new(file)
         ledger.process_file
         Filelib.insert(filename: file, purpose: 'summary')
+        Dir.mkdir("#{DRIVE}/sunnyside-files/summary/archive") if !Dir.exist?("#{DRIVE}/sunnyside-files/summary/archive")
+        FileUtils.mv(file, "#{DRIVE}/sunnyside-files/summary/archive/#{File.basename(file)}")
+        ledger.export_to_csv
       end
     }
   end
   
   class Ledger
+    include Sunnyside
     attr_reader   :post_date, :file, :pages
 
     # when Ledger gets initialized, the page variable filters out the VNS clients
@@ -23,12 +27,16 @@ module Sunnyside
       @pages     = PDF::Reader.new(file).pages.select { |page| !page.raw_content.include?('VISITING NURSE SERVICE') }
     end
 
-    def providers
-      pages.map { |page| PageData.new(page.raw_content, file) }
+    def process_file
+      pages.each { |page| PageData.new(page.raw_content, post_date).invoice_data }
     end
 
-    def process_file
-      providers.each { |page| page.invoice_data }
+    def post_date
+      Date.parse(file[0..7])
+    end
+
+    def export_to_csv
+      Invoice.where(post_date: post_date).all.each { |inv| self.payable_csv(inv, post_date) }
     end
   end
 
@@ -37,13 +45,12 @@ module Sunnyside
   # Then, the data gets finalized (via the InvoiceLine child class of PageData) and inserted into the database. 
 
   class PageData
-    include Sunnyside
-    attr_reader :page_data, :provider, :post_date
+    attr_reader :page_data, :provider, :post_date, :invoice_data
 
-    def initialize(page_data, file)
+    def initialize(page_data, post_date)
       @provider  = page_data[/CUSTOMER:\s+(.+)(?=\)')/, 1]
-      @post_date = Date.parse(file[0..7])
-      @page_data = page_data.split(/\n/).select { |line| line =~ /^\([0-9\/]+\s/ }
+      @post_date = post_date
+      @page_data = page_data.split(/\n/).select { |line| line =~ /^\([0-9\/]{8}\s/ }
     end
 
     # Since the source data is somewhat unreliable in the format, there have been two different variations of AMERIGROUP and ELDERSERVE.
@@ -69,30 +76,33 @@ module Sunnyside
     end
 
     def invoice_lines
-      page_data.map { |line| InvoiceLine.new(line, formatted_provider, post_date) }
+      page_data.map { |line| 
+        line.gsub!(/^\(|\)'/)
+        client_name = line.slice!(20..45)
+        line        = InvoiceLine.new(line, formatted_provider, post_date, client_name) 
+      }
     end
 
     def invoice_data
       invoice_lines.each { |inv| inv.finalize }
-      # Invoice.where(post_date: post_date).all.each { |inv| self.payable_csv(inv, post_date, formatted_provider) }
     end
 
     # InvoiceLine does all the nitty-gritty parsing of an invoice line into the necessary fields the DB requres.
 
     class InvoiceLine < PageData
       attr_accessor :invoice, :rate, :hours, :amount, :client_id, :client_name, :post_date, :provider
-      def initialize(line, provider, post_date)
-        @provider                                               = provider
-        @post_date                                              = post_date
-        @client_name                                            = line.slice!(20..45)
+      def initialize(line, provider, post_date, client_name)
         @doc_date, @invoice, @client_id, @hours, @rate, @amount = line.split
+        @post_date                                              = post_date
+        @client_name                                            = client_name.strip
+        @provider                                               = provider
       end
 
       # Some invoice totals exceed $999.99, so the strings need to be parsed into a format, sans comma, that the DB will read correctly. 
       # Otherwise, the DB will read 1,203.93 as 1.0.
 
       def amt
-        amount.gsub(/,/, '')
+        amount.gsub(/,|\)'/, '')
       end
 
       # Ocasionally, new clients will appear on the PDF doc. If the DB does not find a client with the client_id, then it executes a method wherein
@@ -100,11 +110,11 @@ module Sunnyside
 
       def finalize
         if !client_missing? 
-          add_invoice
           update_client if new_provider?
+          add_invoice
         else 
           add_client
-          finalize
+          add_invoice
         end
       end
 
@@ -117,16 +127,16 @@ module Sunnyside
       end
 
       def update_client
-        Client[client_id].update(provider_id: provider.id, type: provider.type)
+        Client[client_id].update(provider_id: provider.id, prov_type: provider.prov_type)
       end
 
       def fund_id
-        print "Enter in the FUND EZ ID for this client: #{client_name.strip} of #{provider.name}. "
+        print "Enter in the FUND EZ ID for this client: #{client_name} of #{provider.name}: "
         return gets.chomp
       end
 
       def add_client
-        Client.insert(client_number: client_id, client_name: client_name.strip, fund_id: fund_id, provider_id: provider.id, type: provider.type)
+        Client.insert(client_number: client_id, client_name: client_name.strip, fund_id: fund_id, provider_id: provider.id, prov_type: provider.prov_type)
       end
 
       # rarely there may be an invoice line that contains an invoice number that already exists. This method accounts for it, by merely updating the amount.

@@ -1,6 +1,6 @@
 module Sunnyside  
   def self.process_private
-    Dir["#{LOCAL_FILES}/private/*.PDF", "#{LOCAL_FILES}/private/*.pdf"].select { |file| Filelib.where(filename: file).count == 0 }.each do |file|
+    Dir["#{DRIVE}/sunnyside-files/private/*.PDF", "#{DRIVE}/sunnyside-files/private/*.pdf"].select { |file| Filelib.where(filename: file).count == 0 }.each do |file|
       puts "processing #{file}..."
       PDF::Reader.new(file).pages.each { |inv| 
         page  = inv.text.split(/\n/)

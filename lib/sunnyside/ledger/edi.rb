@@ -1,21 +1,20 @@
 module Sunnyside
   def self.edi_parser
     print "checking for new files...\n"
-    Dir["#{LOCAL_FILES}/835/*.txt"].select { |file| Filelib.where(:filename => file).count == 0 }.each do |file|
+    Dir["#{DRIVE}/sunnyside-files/835/*.txt"].select { |file| Filelib.where(:filename => file).count == 0 }.each do |file|
       print "processing #{file}...\n"
       data = File.open(file).read
 
       # Detect to see if the EDI file already has new lines inserted. If so, the newlines are removed before the file gets processed.
 
-      if data.include?(/\n/)
-        data.gsub!(/\n/, '')
-      end
+      data.gsub!(/\n/, '')
 
       data  = data.split(/~CLP\*/)
       edi   = Edi.new(data, file)
       edi.parse_claim_header
       Filelib.insert(filename: file, created_at: Time.now, purpose: 'EDI Import', file_type: '835 Remittance')
       edi.save_payment_to_db
+      FileUtils.mv(file, "#{DRIVE}/sunnyside-files/835/archive/#{File.basename(file)}")
     end
   end
 
