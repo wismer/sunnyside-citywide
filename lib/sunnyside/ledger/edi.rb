@@ -9,20 +9,136 @@ module Sunnyside
 
       data.gsub!(/\n/, '')
 
+      # Determine X12 file type
+
       data  = data.split(/~CLP\*/)
-      edi   = Edi.new(data, file)
-      edi.parse_claim_header
-      Filelib.insert(filename: file, created_at: Time.now, purpose: 'EDI Import', file_type: '835 Remittance')
-      edi.save_payment_to_db
-      FileUtils.mv(file, "#{DRIVE}/sunnyside-files/835/archive/#{File.basename(file)}")
+
+      edi_file = EdiReader.new(data)
     end
   end
+
+  class EdiReader 
+    attr_reader :data
+
+    def initialize(data)
+      @data           = data
+    end
+
+    def claims
+      data.select { |clm| clm =~ /^\d+/ }.map { |clm| clm.split(/~(?=SVC)/) }
+    end
+
+    def parse_claims
+      claims.each { |claim| ClaimParser.new(claim).parse }
+    end
+  end
+
+  class ClaimParser < EdiReader
+    attr_reader :claim_header, :service_data
+
+    def initialize(claim)
+      @claim_header = claim[0].split(/\*/)
+      @service_data = claim.select { |clm| clm =~ /^SVC/ }
+    end
+
+    def header
+      {
+        :invoice       => claim_header[0],
+        :response_code => claim_header[1],
+        :billed        => claim_header[2],
+        :paid          => claim_header[3],
+        :units         => claim_header[5], # 4 is not used - that is the patient responsibility amount
+        :claim_number  => claim_header[6]
+      }
+    end
+
+    def recipient_id
+      claim_header[/(?<=MI\*)\w+$/]
+    end
+
+    def client_info
+    end
+
+    def parse
+      claim_id = ClaimEntry.new(recipient_id, header).to_db
+      service_data.each { |service| 
+        svc = ServiceParser.new(service, claim_id)
+        svc.parse_errors
+        svc.to_db
+      }
+    end
+
+    def invoice_match?
+      Invoice[]
+    end
+  end
+
+  class ClaimEntry < EdiReader
+    attr_reader :invoice, :response_code, :billed, :paid, :units, :claim_number
+
+    def initialize(recipient_id, payment, header = {})
+      @recipient_id  = recipient_id
+      @payment       = payment
+      @invoice       = header[:invoice].gsub(/[OLD]/, 'O' => '0', 'D' => '8', 'L' => '1').gsub(/^0/, '')[0..5].to_i # for the corrupt SHP EDI files
+      @response_code = header[:response_code]
+      @billed        = header[:billed]
+      @paid          = header[:paid]
+      @units         = header[:units]
+      @claim_number  = header[:claim_number]
+    end
+
+    def to_db
+      Claim.insert(
+        :invoice_id     => inv, 
+        :payment_id     => payment.id, 
+        :client_id      => client, 
+        :control_number => claim_number, 
+        :paid           => paid, 
+        :billed         => billed, 
+        :status         => response_code, 
+        :recipient_id   => recipient_id, 
+        :post_date      => post_date
+      )
+    end
+
+    def client
+      Invoice[invoice].client_id || Invoice.where(recipient_id: recipient_id).get(:client_number)
+    end
+
+  end
+
+  class ServiceParser < EdiReader
+    attr_reader :service_line, :claim_id
+
+    def initialize(service_line, claim_id)
+      @service_line = service_line.split(/\~/)
+      @claim_id     = Claim[claim_id]
+    end
+
+    def dos
+      service_line.detect { |svc| svc =~ /^DTM/ }[/\w+$/]
+    end
+
+    def service_code
+      service_line[0][/HC:[\w:]+/]
+    end
+
+    def parse
+      
+    end
+
+
+
 
   class Edi
     attr_reader :header, :claims, :file
     def initialize(data, file)
       @header, @claims = data[0], data.drop(1)
       @file            = file
+    end
+
+    def type
+      header[/(?<=\*X\*)\w+(?=~ST)/, 1].include?('5010') ? :new_type : :old_type
     end
 
     def process_file
