@@ -8,7 +8,7 @@ module Sunnyside
     files.each do |file|
       puts "processing #{file}..."
       data = PDF::Reader.new(file).pages.map { |page| page.raw_content.gsub(/^\(\s|\)'$/, '') }.join
-      data.split(/^\((?=REG\s+LOC)/).each { |entry| ParseInvoice.new(entry).process } 
+      data.split(/(?=REG\s+LOC)/).each { |entry| ParseInvoice.new(entry).process } 
       Filelib.insert(filename: file, purpose: '837')
       FileUtils.mv(file, "#{DRIVE}/sunnyside-files/837/archive/#{File.basename(file)}")
     end
@@ -18,15 +18,18 @@ module Sunnyside
     attr_reader :client_line, :visits
 
     def initialize(entry)
-      @client_line = entry.split(/\n/).select { |line| line =~ /\s+001\s+/ }[0]
+      @client_line = entry.split(/\n/).select { |line| line =~ /\s+001\s+/ }.join
       @visits      = entry.split(/\n/).select { |line| line =~ /^\d{6}/    }
     end
 
+    def client_data
+      client_line.slice(9..28) + client_line.slice(54..120)
+    end
+
     def invoice_lines
-      client_data
       visits.map { |inv| 
           InvoiceDetail.new(
-            client_line, 
+            client_data, 
             { :invoice  => inv[0..5], 
               :svc_code => inv[18..22], 
               :modifier => inv[25..30], 
@@ -38,10 +41,6 @@ module Sunnyside
     end
 
     # removes the client name from the line
-
-    def client_data
-      client_line.slice!(27..52)
-    end
 
     def process
       invoice_lines.each { |inv| inv.to_db }
@@ -66,7 +65,7 @@ module Sunnyside
 
     def to_db
       Visit.insert(
-        :client_id    => client.client_number, 
+        :client_id    => client_id, 
         :modifier     => modifier, 
         :invoice_id   => invoice,
         :amount       => amount,
@@ -74,11 +73,16 @@ module Sunnyside
         :dos          => Date.strptime(dos, '%m/%d/%y'),
         :units        => units
       )
-      update_invoice
+      update_client_demographics
     end
 
-    def update_invoice
+    def client_id
+      Invoice[invoice].client_id
+    end
+
+    def update_client_demographics
       Invoice[invoice].update(:auth => client.authorization, :recipient_id => client.recipient_id, service_number: client.service_id)
+      Client[client_id].update(:recipient_id => client.recipient_id, :dob => client.dob)
     end
   end
 
@@ -87,26 +91,6 @@ module Sunnyside
 
     def initialize(client)
       @client_id, @service_id, @dob, @recipient_id, @authorization = client.split.map { |line| line.strip }
-    end
-
-    def client_number
-      if client_missing?
-        puts 'how the hell is it happening? ' + client_id
-      else
-        client_id
-      end
-    end
-
-    def client_missing?
-      client.nil?
-    end
-
-    def client
-      Client[client_id]
-    end
-
-    def update_dob
-      client.update(dob: Date.strftime(dob, '%m/%d/%y'))
     end
   end
 end

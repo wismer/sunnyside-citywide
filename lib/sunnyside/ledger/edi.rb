@@ -1,7 +1,7 @@
 module Sunnyside
   def self.edi_parser
     print "checking for new files...\n"
-    Dir["#{DRIVE}/sunnyside-files/835/*.txt"].select { |file| Filelib.where(:filename => file).count == 0 }.each do |file|
+    Dir["#{DRIVE}/sunnyside-files/835/*.txt"].each do |file|
       print "processing #{file}...\n"
       data = File.open(file).read
 
