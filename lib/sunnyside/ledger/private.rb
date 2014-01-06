@@ -7,6 +7,7 @@ module Sunnyside
         InvoiceParse.new(page).process if page.include?('Remit') 
       }
       Filelib.insert(filename: file, purpose: 'private client visit data')
+      FileUtils.mv(file, "#{DRIVE}/sunnyside-files/private/archive/#{File.basename(file)}")
     end
   end
 
@@ -23,7 +24,7 @@ module Sunnyside
     end
 
     def client_number
-      client_line[/[0-9]{7}/, 0]
+      client_line[/[0-9]{7}/]
     end
 
     def process

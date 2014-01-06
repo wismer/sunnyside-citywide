@@ -30,27 +30,4 @@ module Sunnyside
   end
 
   require 'sunnyside/models/sequel_classes'
-  # Since all computers at work are windows, this gem will be windows only.
-
-  # LOCAL_FILES = ENV["HOMEDRIVE"] + '/sunnyside-files'
-  # if !Dir.exist?("#{LOCAL_FILES}")
-  #   Dir.mkdir("#{LOCAL_FILES}")
-  #   ['db', '835', '837', 'summary', 'cash_receipts', 'new-ledger', 'private', 'summary'].each { |folder| Dir.mkdir("C:/#{LOCAL_FILES}/#{folder}") }
-  # end
-
-  # # raise 'Database file missing!' if File.exist?("#{LOCAL_FILES}/db/sunnyside.db") 
-
-  # DB = Sequel.connect("sqlite:/#{LOCAL_FILES}/db/sunnyside.db")  
-
-  # # Second database for copying old data
-
-  # if DB.tables.empty?
-  #   require 'sunnyside/models/db_setup'
-  #   TT = Sequel.connect("sqlite:/#{LOCAL_FILES}/db/project.db")
-  #   Sunnyside.create_tables
-  #   Sunnyside.add_providers
-  #   Sunnyside.add_ftp_data
-  #   Sunnyside.add_clients
-  # end
-  # require 'sunnyside/models/sequel_classes'
 end
