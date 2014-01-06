@@ -148,7 +148,8 @@ module Sunnyside
     #   }
     # end
 
-    def add_ftp_data
+    def add_denial_data
+      CSV.foreach('examples/denial_data.csv', 'r') { |row| Denial.insert(denial_code: row[1], denial_explanation: row[2]) }
     end
 
     def add_providers

@@ -26,8 +26,8 @@ module Sunnyside
   if DB.tables.empty?
     Sunnyside.create_tables
     Sunnyside.add_providers
-    Sunnyside.add_ftp_data
-  end    
+    Sunnyside.add_denial_data
+  end
 
   require 'sunnyside/models/sequel_classes'
   # Since all computers at work are windows, this gem will be windows only.
