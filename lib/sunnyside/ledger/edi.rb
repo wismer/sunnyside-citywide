@@ -164,7 +164,7 @@ module Sunnyside
     end
 
     def denied?
-      paid.to_f != billed.to_f
+      paid != billed
     end
   end
 end

@@ -60,7 +60,7 @@ module Sunnyside
       @modifier     = invoice_line[:modifier]
       @dos          = invoice_line[:dos]
       @units        = invoice_line[:units]
-      @amount       = invoice_line[:amount]
+      @amount       = invoice_line[:amount].gsub(/,/, '')
     end
 
     def to_db
