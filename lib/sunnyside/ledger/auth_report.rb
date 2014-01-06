@@ -82,7 +82,7 @@ module Sunnyside
 
     def update_client_demographics
       Invoice[invoice].update(:auth => client.authorization, :recipient_id => client.recipient_id, service_number: client.service_id)
-      Client[client_id].update(:recipient_id => client.recipient_id, :dob => client.dob)
+      Client[client_id].update(:recipient_id => client.recipient_id)
     end
   end
 
@@ -91,6 +91,12 @@ module Sunnyside
 
     def initialize(client)
       @client_id, @service_id, @dob, @recipient_id, @authorization = client.split.map { |line| line.strip }
+    end
+
+    # Not parsing correctly.
+
+    def date_of_birth
+      Date.strptime(dob, '%m/%d/%Y')
     end
   end
 end
