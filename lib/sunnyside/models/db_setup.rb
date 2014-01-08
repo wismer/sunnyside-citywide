@@ -139,7 +139,7 @@ module Sunnyside
     end
 
     def add_denial_data
-      CSV.foreach('examples/denial_data.csv', 'r') { |row| Denial.insert(denial_code: row[1], denial_explanation: row[2]) }
+      CSV.foreach('examples/denial_data.csv', 'r') { |row| DB[:denials].insert(denial_code: row[0], denial_explanation: row[1]) }
     end
 
     def add_providers

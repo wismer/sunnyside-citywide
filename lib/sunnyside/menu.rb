@@ -45,7 +45,7 @@ module Sunnyside
       if type == :ledger
         Dir["#{DRIVE}/sunnyside-files/summary/*.PDF", "#{DRIVE}/sunnyside-files/summary/*.pdf"].size
       elsif type == :edi
-        Dir["#{DRIVE}/sunnyside-files/edi/*.txt"].size
+        Dir["#{DRIVE}/sunnyside-files/835/*.txt"].size
       else
         Dir["#{DRIVE}/sunnyside-files/837/*.PDF", "#{DRIVE}/sunnyside-files/837/*.pdf"].size
       end
