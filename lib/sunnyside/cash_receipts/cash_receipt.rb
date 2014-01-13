@@ -3,41 +3,97 @@ module Sunnyside
   def self.cash_receipt
     puts "1.) EDI PAYMENT"
     puts "2.) MANUAL PAYMENT"
-    payment = 
+    cash_receipt = 
       case gets.chomp
       when '1'
-        EdiPayment.new
+        CashReceipt.new(:electronic)
       when '2'
-        ManualPayment.new
+        CashReceipt.new(:manual)
       end
-    payment.collate
+    cash_receipt.collate
   end
 
-  def check_date_abbre
-    puts 'Enter in check number, post date and then followed by the provider abbreviation (separated by a space - ex: 235345 10/12/2013 WEL): '
-    ans = gets.chomp.split
-    if ans.size == 3
-      return ans
-    else
-      raise 'You need to enter in the specified fields.'
+  # def check_date_abbre
+  #   puts 'Enter in check number, post date and then followed by the provider abbreviation (separated by a space - ex: 235345 10/12/2013 WEL): '
+  #   ans = gets.chomp.split
+  #   if ans.size == 3
+  #     return ans
+  #   else
+  #     raise 'You need to enter in the specified fields.'
+  #   end
+  # end
+
+  # def invoice_numbers
+  #   puts 'Enter in invoices, each separated by a space. If an invoice contains any denials, flag it by typing in a "-d" right after the last number. '
+  #   return gets.chomp.split
+  # end
+
+
+
+  class CashReceipt
+    attr_reader :post_date
+    def initialize(method)
+      print "Enter in post date (YYYY-MM-DD): "
+      @post_date = Date.parse(gets.chomp)
+      @method    = method
     end
-  end
 
-  def invoice_numbers
-    puts 'Enter in invoices, each separated by a space. If an invoice contains any denials, flag it by typing in a "-d" right after the last number. '
-    return gets.chomp.split
+    def collate
+      case method
+      when :electronic
+        edi_provider_and_check
+      when :manual
+        manual_invoices
+      else
+        break
+      end
+    end
+
+    def edi_provider_and_check
+      provider = Provider[gets.chomp]
+      Payment.where(provider_id: provider.id).all.each { |check| "#{check.id}: Number - #{check.check_number} Amount - #{check.check_total}"}
+      print "Type in the Check ID: "
+      payment = Payment[gets.chomp]
+      check   = EdiPayment.new(payment, post_date, provider) 
+      check.collate
+    end
+
+    def provider
+      Provider.all.each { |prov| "#{prov.id}: #{prov.name}"}
+      print "Type in the Provider ID: "
+      if !Provider[gets.chomp].nil?
+        return Provider[gets.chomp]
+      else
+        provider
+      end
+    end
+
+    def manual_invoices
+      print "# of checks to enter for the post date of #{post_date}? "
+      num = gets.chomp.to_i
+      num.times do 
+        prov = provider
+        print "Enter in the check number: "
+        check = gets.chomp
+        puts "Enter in the invoices, each separated by a space. If any invoice has a denial, 'flag' it by typing '-d' after the invoice number.\n"
+        invoices    = gets.chomp.split
+        manual = ManualPayment.new(invoices, post_date, prov, check)
+        manual.seed_claims_and_services
+        manual.create_csv
+      end
+    end
   end
 
   class EdiPayment
     include Sunnyside
-    attr_reader :check_number, :post_date, :prov
+    attr_reader :payment, :post_date, :provider
 
-    def initialize
-      @check_number, @post_date, @prov = self.check_date_abbre
+    def initialize(payment, post_date, provider)
+      @payment, @post_date, @provider = payment.check_number, post_date, provider
     end
 
     def invoices
-      Claim.where(check_number: check_number).map { |clm| clm.invoice_id }.uniq
+      Claim.where(payment_id: payment.id).map { |clm| clm.invoice_id }.uniq
     end
 
     def populated_data
@@ -49,73 +105,48 @@ module Sunnyside
     end
 
     def payment_id
-      Payment.where(check_number: check_number).get(:id)
+      payment.id
     end
 
     def collate
       puts "Total Amount Paid for this check is: #{total}\nProcessing..."
-      populated_data.each { |inv| self.receivable_csv(inv, payment_id, check_number, post_date) if inv.amount > 0.0 }
+      populated_data.each { |inv| self.receivable_csv(inv, payment_id, payment, post_date) if inv.amount > 0.0 }
       puts "Check added to #{LOCAL_FILES}/EDI-citywide-import.csv"
       puts "Please note that there are #{denied_services} service days with possible denials"
     end
 
     def denied_services
-      Service.where(check_number: check_number).exclude(denial_reason: [nil, '']).count
+      Service.where(check_number: check_number).exclude(denial_reason: nil).count
     end
   end
 
   class ManualPayment
-    attr_reader :check, :manual_invs, :post_date, :prov
+    attr_reader :denied_invoices, :paid_invoices, :post_date, :provider, :check
 
-    def initialize
-      @check, @post_date, @prov = self.check_date_abbre
-      @manual_invs              = self.invoice_numbers
+    def initialize(invoices, post_date, prov, check)
+      @denied_invoices = invoices.select { |inv| inv.include?('-d') }.map { |inv| Invoice[inv.gsub(/-d/, '')] }
+      @paid_invoices   = invoices.reject { |inv| inv.include?('-d') }.map { |inv| Invoice[inv] }
+      @post_date       = post_date
+      @provider        = prov
+      @check           = check
+      @payment_id      = Payment.insert(check_number: check, post_date: post_date, provider_id: provider.id)
     end
 
-    def provider
-      Provider.where(abbreviation: prov).first
-    end
-
-    def payment_id
-      if check_exists?
-        Payment.where(check_number: check, post_date: post_date, provider_id: provider.id).get(:id)
-      else
-        Payment.insert(check_number: check, post_date: post_date, provider_id: provider.id)
-      end
-    end
-
-    def check_exists?
-      Payment.where(check_number: check, post_date: post_date, provider_id: provider.id).count > 0
-    end
-
-    def date
-      Date.strptime(post_date, '%m/%d/%Y')
-    end
-
-    def collate
-      manual_invs.each { |inv| 
-        # manual invoice number is matched with what is in the DB
-        invoice  ||= Invoice[inv.gsub(/-d/, '')]
-        # claim is then created and saved to the DB; the ID for the particular claim created is saved as claim_id
+    def seed_claims_and_services
+      (denied_invoices + paid_invoices).each do |invoice|
         claim_id = create_claim(invoice)
-        # service entries are created by duplicating the visits that were originally charged
         create_services(invoice, claim_id)
-        # if a -d is present in ( inv ), the invoice is then marked as denied (or the payment amount doesnt match the billed)
-        # services that have foreign_key = claim_id, are then shown the user, which are then edited.
-        edit_services(claim_id) if denial_present?(inv)
-        # after that, the payments are then finalized and posted to the csv file creator for importing into FUND EZ
-        self.receivable_csv(invoice, payment_id, check, post_date)
-      }
+      end
+      edit_services if denied_invoices.length > 0
     end
 
-    def invoice_data(inv)
-      invoice = inv.gsub(/-d/, '').to_i
-      yield Invoice[invoice]
+    def create_csv
+      (denied_invoices + paid_invoices).each { |inv| self.receivable_csv(inv, payment_id, check, post_date) }
     end
 
     def create_claim(invoice)
       Claim.insert(
-        :invoice_id   => invoice.id, 
+        :invoice_id   => invoice.invoice_number, 
         :client_id    => invoice.client_id, 
         :billed       => invoice.amount, 
         :paid         => 0.0, 
@@ -148,16 +179,14 @@ module Sunnyside
       Service.where(payment_id: payment_id, invoice_id: inv)
     end
 
-    def edit_services(inv)
-      service = EditServices.new(inv, payment_id)
-      loop do 
-        service.show_all
-        service.adjust
-      end
-    end
-
-    def denial_present?(invoice)
-      invoice.include?('-d')
+    def edit_services
+      denied_services.each { |inv| 
+        service = EditServices.new(inv, payment_id)
+        loop do 
+          service.show_all
+          service.adjust
+        end
+      }
     end
 
     def visits(invoice)
