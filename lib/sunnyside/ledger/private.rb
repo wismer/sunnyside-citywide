@@ -1,11 +1,13 @@
 module Sunnyside  
   def self.process_private
-    Dir["#{DRIVE}/sunnyside-files/private/*.PDF", "#{DRIVE}/sunnyside-files/private/*.pdf"].select { |file| Filelib.where(filename: file).count == 0 }.each do |file|
-      puts "processing #{file}..."
-      PDF::Reader.new(file).pages.each { |inv| 
-        page  = inv.text.split(/\n/)
-        InvoiceParse.new(page).process if page.include?('Remit') 
-      }
+    Dir["#{DRIVE}/sunnyside-files/private/*.PDF", "#{DRIVE}/sunnyside-files/private/*.pdf"].each do |file| 
+      if Filelib.where(filename: file).count == 0 
+        puts "processing #{file}..."
+        PDF::Reader.new(file).pages.each { |inv| 
+          page  = inv.text.split(/\n/)
+          InvoiceParse.new(page).process if page.include?('Remit') 
+        }
+      end
       Filelib.insert(filename: file, purpose: 'private client visit data')
       FileUtils.mv(file, "#{DRIVE}/sunnyside-files/private/archive/#{File.basename(file)}")
     end

@@ -2,7 +2,7 @@ module Sunnyside
   PRIVATE_CLIENTS = ['TABICKMAN', 'JIBAJA', 'SUNNYSIDE COMMUNITY', 'BARROW', 'JENSEN']
 
   def self.private_clients
-    Dir['private/*.PDF'].each { |file| PrivateClient.new(file).create_pdfS }
+    Dir['private/*.PDF'].each { |file| PrivateClient.new(file).create_pdfs }
   end
 
   class PrivateClient

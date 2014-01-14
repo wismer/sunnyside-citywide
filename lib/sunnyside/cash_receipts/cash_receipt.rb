@@ -31,40 +31,60 @@ module Sunnyside
 
 
   class CashReceipt
-    attr_reader :post_date
-    def initialize(method)
+    attr_reader :post_date, :type_of_entry
+    def initialize(type_of_entry)
       print "Enter in post date (YYYY-MM-DD): "
-      @post_date = Date.parse(gets.chomp)
-      @method    = method
+      @post_date        = Date.parse(gets.chomp)
+      @type_of_entry    = type_of_entry
     end
 
     def collate
-      case method
+      case type_of_entry
       when :electronic
         edi_provider_and_check
       when :manual
         manual_invoices
       else
-        break
+        exit
       end
     end
 
     def edi_provider_and_check
-      provider = Provider[gets.chomp]
-      Payment.where(provider_id: provider.id).all.each { |check| "#{check.id}: Number - #{check.check_number} Amount - #{check.check_total}"}
+      prov_id = provider.id
+      Payment.where(provider_id: prov_id).all.each { |check| puts "#{check.id}: Number - #{check.check_number} Amount - #{check.check_total}"}
       print "Type in the Check ID: "
       payment = Payment[gets.chomp]
-      check   = EdiPayment.new(payment, post_date, provider) 
+
+      # For ICS checks, since for some reason the check number doesn't match the EDI TRN field.
+
+      if payment.provider_id == 12
+        print "type in the correct ICS check #: "
+        Payment.update(:check_number => gets.chomp)
+      end
+      check   = EdiPayment.new(payment, post_date) 
       check.collate
     end
 
     def provider
-      Provider.all.each { |prov| "#{prov.id}: #{prov.name}"}
+      Provider.all.each { |prov| puts "#{prov.id}: #{prov.name}"}
       print "Type in the Provider ID: "
-      if !Provider[gets.chomp].nil?
-        return Provider[gets.chomp]
+      res = gets.chomp
+      if !Provider[res].nil?
+        return Provider[res]
       else
         provider
+      end
+    end
+
+    def invoice_selection
+      puts "Enter in the invoices, each separated by a space. If any invoice has a denial, 'flag' it by typing '-d' after the invoice number.\n"
+      invoices = gets.chomp.split
+      print "You have typed out #{invoices.length} number of invoices. Do you wish to add more to the same check? (Y or N): "
+      if gets.chomp.upcase == 'Y'
+        more_invoices = gets.chomp.split
+        return (more_invoices + invoices)
+      else
+        return invoices
       end
     end
 
@@ -72,12 +92,11 @@ module Sunnyside
       print "# of checks to enter for the post date of #{post_date}? "
       num = gets.chomp.to_i
       num.times do 
-        prov = provider
+        prov     = provider
         print "Enter in the check number: "
-        check = gets.chomp
-        puts "Enter in the invoices, each separated by a space. If any invoice has a denial, 'flag' it by typing '-d' after the invoice number.\n"
-        invoices    = gets.chomp.split
-        manual = ManualPayment.new(invoices, post_date, prov, check)
+        check    = gets.chomp
+        invoices = invoice_selection
+        manual   = ManualPayment.new(invoices, post_date, prov, check) 
         manual.seed_claims_and_services
         manual.create_csv
       end
@@ -86,42 +105,35 @@ module Sunnyside
 
   class EdiPayment
     include Sunnyside
-    attr_reader :payment, :post_date, :provider
+    attr_reader :payment, :post_date
 
-    def initialize(payment, post_date, provider)
-      @payment, @post_date, @provider = payment.check_number, post_date, provider
-    end
-
-    def invoices
-      Claim.where(payment_id: payment.id).map { |clm| clm.invoice_id }.uniq
+    def initialize(payment, post_date)
+      @payment, @post_date = payment, post_date
     end
 
     def populated_data
-      invoices.map { |inv| Invoice[inv] }
+      Claim.where(payment_id: payment.id).all.select { |clm| clm.paid > 0.0 }
     end
 
     def total
-      populated_data.map { |inv| inv.amount }.inject { |x, y| x + y }.round(2)
-    end
-
-    def payment_id
-      payment.id
+      populated_data.map { |clm| clm.paid }.inject { |x, y| x + y }.round(2)
     end
 
     def collate
       puts "Total Amount Paid for this check is: #{total}\nProcessing..."
-      populated_data.each { |inv| self.receivable_csv(inv, payment_id, payment, post_date) if inv.amount > 0.0 }
-      puts "Check added to #{LOCAL_FILES}/EDI-citywide-import.csv"
+      populated_data.each { |inv| self.receivable_csv(inv, payment, post_date) }
+      puts "Check added to #{DRIVE}/EDI-citywide-import.csv"
       puts "Please note that there are #{denied_services} service days with possible denials"
     end
 
     def denied_services
-      Service.where(check_number: check_number).exclude(denial_reason: nil).count
+      Service.where(payment_id: payment.id).exclude(denial_reason: nil).count
     end
   end
 
   class ManualPayment
-    attr_reader :denied_invoices, :paid_invoices, :post_date, :provider, :check
+    include Sunnyside
+    attr_reader :denied_invoices, :paid_invoices, :post_date, :provider, :check, :payment_id
 
     def initialize(invoices, post_date, prov, check)
       @denied_invoices = invoices.select { |inv| inv.include?('-d') }.map { |inv| Invoice[inv.gsub(/-d/, '')] }
@@ -129,7 +141,7 @@ module Sunnyside
       @post_date       = post_date
       @provider        = prov
       @check           = check
-      @payment_id      = Payment.insert(check_number: check, post_date: post_date, provider_id: provider.id)
+      @payment_id      = Payment.insert(check_number: check, post_date: post_date, provider_id: prov.id)
     end
 
     def seed_claims_and_services
@@ -141,7 +153,11 @@ module Sunnyside
     end
 
     def create_csv
-      (denied_invoices + paid_invoices).each { |inv| self.receivable_csv(inv, payment_id, check, post_date) }
+      claims.each { |clm| self.receivable_csv(clm, Payment[payment_id], post_date) if clm.paid > 0.0 }
+    end
+
+    def claims
+      (denied_invoices + paid_invoices).map { |inv| Claim.where(invoice_id: inv.invoice_number, payment_id: payment_id).first }
     end
 
     def create_claim(invoice)
@@ -149,7 +165,7 @@ module Sunnyside
         :invoice_id   => invoice.invoice_number, 
         :client_id    => invoice.client_id, 
         :billed       => invoice.amount, 
-        :paid         => 0.0, 
+        :paid         => invoice.amount, 
         :payment_id   => payment_id, 
         :provider_id  => invoice.provider_id
       )
@@ -175,17 +191,16 @@ module Sunnyside
       Visit.where(invoice_id: invoice.invoice_number).all
     end
 
-    def services(inv)
-      Service.where(payment_id: payment_id, invoice_id: inv)
-    end
-
     def edit_services
-      denied_services.each { |inv| 
-        service = EditServices.new(inv, payment_id)
-        loop do 
-          service.show_all
-          service.adjust
+      denied_invoices.each { |inv| 
+        services     = Service.where(invoice_id: inv.invoice_number, payment_id: payment_id)
+        edit_service = EditService.new(services) 
+        print "How many services do you wish to change? "
+        gets.chomp.to_i.times do  
+          edit_service.show_all
+          edit_service.adjust
         end
+        adjust_claim(inv)
       }
     end
 
@@ -193,31 +208,35 @@ module Sunnyside
       Visit.where(invoice_id: invoice.invoice_number).all
     end
 
-    class EditServices
-      attr_reader :claim
+    def adjust_claim(inv)
+      service_sum = Service.where(payment_id: payment_id, invoice_id: inv.invoice_number).sum(:paid).round(2)
+      Claim.where(invoice_id: inv.invoice_number, payment_id: payment_id).update(:paid => service_sum)
+    end
+  end
 
-      def initialize(claim_id)
-        @claim    = Claim[claim_id]
-        @services = Service.where(claim_id: claim_id).all
-      end
+  class EditService
+    attr_reader :services
 
-      def show_all
-        services.each { |svc| puts "ID: #{svc.id} #{svc.dos} #{svc.amount}" }
-      end
+    def initialize(services)
+      @services = services.all
+    end
 
-      def adjust
-        print "Type in the Service ID # to change the amount: "
-        id     = gets.chomp
-        print "You selected #{id} - Type in the adjusted amount: "
-        amt    = gets.chomp
-        print "And now type in the denial reason: "
-        reason = gets.chomp
-        adjust_service(id, amt, reason)
-      end
+    def show_all
+      services.each { |svc| puts "ID: #{svc.id} #{svc.dos} #{svc.service_code} #{svc.paid}" }
+    end
 
-      def adjust_service
-        Service[id].update(paid: amt, denial_reason: reason)
-      end
+    def adjust
+      print "Type in the Service ID # to change the amount: "
+      id     = gets.chomp
+      print "You selected #{id} - Type in the adjusted amount: "
+      amt    = gets.chomp
+      print "And now type in the denial reason: "
+      reason = gets.chomp
+      adjust_service(id, amt, reason)
+    end
+
+    def adjust_service(id, amt, reason)
+      Service[id].update(paid: amt, denial_reason: reason)
     end
   end
 end

@@ -8,7 +8,6 @@ module Sunnyside
         ledger = Ledger.new(file)
         ledger.process_file
         Filelib.insert(filename: file, purpose: 'summary')
-        Dir.mkdir("#{DRIVE}/sunnyside-files/summary/archive") if !Dir.exist?("#{DRIVE}/sunnyside-files/summary/archive")
         FileUtils.mv(file, "#{DRIVE}/sunnyside-files/summary/archive/#{File.basename(file)}")
         ledger.export_to_csv
       end
