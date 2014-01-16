@@ -3,7 +3,10 @@ module Sunnyside
   class << self
 
     def create_folders
-      folders     = ['db', '835', '837', 'summary', 'cash_receipts', 'new-ledger', 'private', 'private/archive', 'summary/archive', '837/archive', '835/archive']
+      folders     = ['db', '835', '837', 'summary', 'cash_receipts', 'new-ledger', 'private', 'private/archive', 
+                     'summary/archive', '837/archive', '835/archive', 'ftp', 'ftp/837', 'ftp/837/GUILDNET', 'ftp/837/CPHL', 'ftp/837/ELDERSERVE',
+                     'ftp/835', 'ftp/835/GUILDNET', 'ftp/835/CPHL', 'ftp/835/ELDERSERVE'
+                    ]
       Dir.mkdir("#{DRIVE}/sunnyside-files")
       folders.each { |folder| Dir.mkdir("#{DRIVE}/sunnyside-files/#{folder}") }
     end

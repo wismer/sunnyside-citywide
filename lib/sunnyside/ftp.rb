@@ -2,32 +2,44 @@ require "net/ftp"
 require 'rubygems'
 
 module Sunnyside
-  PROVIDERS = [ 
-                { :username => '****', :password => '****', :name => 'GUILDNET'}, 
-                { :username => '****', :password => '****', :name => 'ELDERSERVE'}, 
-                { :username => '****', :password => '****', :name => 'CPHL'}
-              ]
   def self.access_ftp(process)
-    PROVIDERS.each { |provider| 
-      access = SunnyFTP.new(provider)
-      access.log_on
-      puts "Logged into #{provider[:name]}..."
-      if process == :download
-        access.download_files
-      elsif process == :upload
-        access.upload_files
-      end
-    }
+    puts "1.) GUILDNET"
+    puts "2.) ELDERSERVE"
+    puts "3.) CPHL"
+    print "Select option: "
+    case gets.chomp
+    when '1'
+      puts 'Password for Guildnet?'
+      pass = gets.chomp
+      access = SunnyFTP.new('mcogssideftp', pass, 'GUILDNET')
+    when '2'
+      puts 'Password for ELDERSERVE?'
+      pass = gets.chomp
+      access = SunnyFTP.new('mcoesunc', pass, 'ELDERSERVE')
+    when '3'
+      puts 'Password for CPHL?'
+      pass = gets.chomp
+      access = SunnyFTP.new('mcocetsunch', pass, 'CPHL')
+    else
+      exit
+    end
+    access.log_on
+    puts "Logged into #{access.name}..."
+    if process == :download
+      access.download_files
+    elsif process == :upload
+      access.upload_files
+    end
   end
 
   class SunnyFTP
     attr_reader :ftp, :username, :password, :name, :directory
 
-    def initialize(provider = {})
+    def initialize(username, password, name)
       @ftp      = Net::FTP.new('depot.per-se.com')
-      @username = provider[:username]
-      @password = provider[:password]
-      @name     = provider[:name]      
+      @username = username
+      @password = password
+      @name     = name      
     end
 
     def log_on
@@ -54,7 +66,7 @@ module Sunnyside
     end
 
     def up_files
-      Dir["edi/outgoing/*.txt"]
+      Dir["#{DRIVE}/ftp/outgoing/*.txt"]
     end
 
     def upload_files
@@ -64,14 +76,14 @@ module Sunnyside
           ftp.putbinaryfile(file)
           puts "Upload complete."
           puts "deleting #{file} in local folder."
-          FileUtils.mv(file, "edi/outgoing/uploaded/#{File.basename(file)}")
+          FileUtils.mv(file, "#{DRIVE}/ftp/837/#{name}/#{File.basename(file)}")
         end
       }      
       ftp.close
     end
 
     def provider_folder
-      Dir["edi/incoming/#{name}"].map { |file| File.basename(file) }
+      Dir["ftp/835/#{name}"].map { |file| File.basename(file) }
     end
 
     def new_file?(file)
@@ -82,12 +94,7 @@ module Sunnyside
       download_folder.each do |file|
         if !provider_folder.include?(file)
           puts "Downloading #{file}..."
-          case file
-          when file.include?('TA1') then ftp.getbinaryfile(file, "edi/incoming/#{name}/TA1/#{file}")
-          when file.include?('997') then ftp.getbinaryfile(file, "edi/incoming/#{name}/997/#{file}")
-          else
-            ftp.getbinaryfile(file, "edi/incoming/#{name}/#{file}")
-          end
+          ftp.getbinaryfile(file, "#{DRIVE}/ftp/835/#{name}/#{file}") if File.basename(file).include?('835')
           puts "#{file} placed."
         end
       end

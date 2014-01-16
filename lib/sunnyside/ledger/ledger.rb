@@ -2,7 +2,7 @@ require 'prawn'
 module Sunnyside
   # This should be redone.
   def self.ledger_file
-    Dir["#{DRIVE}/sunnyside-files/summary/*.PDF", "#{DRIVE}/sunnyside-files/summary/*.pdf"].each {|file| 
+    Dir["#{DRIVE}/sunnyside-files/summary/*.PDF"].each {|file| 
       if Filelib.where(filename: file).count == 0 
         puts "processing #{file}..."
         ledger = Ledger.new(file)

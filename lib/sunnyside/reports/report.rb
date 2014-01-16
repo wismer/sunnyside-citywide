@@ -2,7 +2,7 @@ module Sunnyside
   def receivable_csv(claim, payment, post_date)
     total    = claim.paid
     prov     = Provider[claim.provider_id]
-    if Client[claim.client_id].fund_id.nil?
+    if Client[claim.client_id].fund_id.empty?
       puts "Whoops! It appears #{Client[claim.client_id].client_name} doesn't have a fund id. Please retrieve it from FUND EZ and type it in now."
       Client.where(client_number: claim.client_id).update(:fund_id => gets.chomp)
     end
@@ -50,7 +50,11 @@ module Sunnyside
 
   def payable_csv(inv, post_date)
     prov    = Provider[inv.provider_id]
-    fund_id = Client.where(client_number: inv.client_id).get(:fund_id)
+    if Client[inv.client_id].fund_id.empty?
+      puts "Whoops! It appears #{Client[inv.client_id].client_name} for #{prov.name} doesn't have a fund id. Please retrieve it from FUND EZ and type it in now."
+      Client.where(client_number: inv.client_id).update(:fund_id => gets.chomp)
+    end
+    fund_id = Client[inv.client_id].fund_id
     CSV.open("#{DRIVE}/sunnyside-files/new-ledger/#{inv.post_date}-IMPORT-FUND-EZ-LEDGER.csv", "a+") do |row|
       row << [1, 
                 inv.invoice_number, 
@@ -78,5 +82,6 @@ module Sunnyside
                 prov.fund, '',      prov.prov_type,                     '',     inv.amount]
     end   
   end
+
 end
 
