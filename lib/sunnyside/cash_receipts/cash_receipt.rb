@@ -13,25 +13,9 @@ module Sunnyside
     cash_receipt.collate
   end
 
-  # def check_date_abbre
-  #   puts 'Enter in check number, post date and then followed by the provider abbreviation (separated by a space - ex: 235345 10/12/2013 WEL): '
-  #   ans = gets.chomp.split
-  #   if ans.size == 3
-  #     return ans
-  #   else
-  #     raise 'You need to enter in the specified fields.'
-  #   end
-  # end
-
-  # def invoice_numbers
-  #   puts 'Enter in invoices, each separated by a space. If an invoice contains any denials, flag it by typing in a "-d" right after the last number. '
-  #   return gets.chomp.split
-  # end
-
-
-
   class CashReceipt
     attr_reader :post_date, :type_of_entry
+
     def initialize(type_of_entry)
       print "Enter in post date (YYYY-MM-DD): "
       @post_date        = Date.parse(gets.chomp)
@@ -41,38 +25,11 @@ module Sunnyside
     def collate
       case type_of_entry
       when :electronic
-        edi_provider_and_check
+        Sunnyside.check_prompt { |payment_id| EdiPayment.new(payment_id, post_date).collate }
       when :manual
         manual_invoices
       else
         exit
-      end
-    end
-
-    def edi_provider_and_check
-      prov_id = provider.id
-      Payment.where(provider_id: prov_id).all.each { |check| puts "#{check.id}: Number - #{check.check_number} Amount - #{check.check_total}"}
-      print "Type in the Check ID: "
-      payment = Payment[gets.chomp]
-
-      # For ICS checks, since for some reason the check number doesn't match the EDI TRN field.
-
-      if payment.provider_id == 12
-        print "type in the correct ICS check #: "
-        Payment.update(:check_number => gets.chomp)
-      end
-      check   = EdiPayment.new(payment, post_date) 
-      check.collate
-    end
-
-    def provider
-      Provider.all.each { |prov| puts "#{prov.id}: #{prov.name}"}
-      print "Type in the Provider ID: "
-      res = gets.chomp
-      if !Provider[res].nil?
-        return Provider[res]
-      else
-        provider
       end
     end
 

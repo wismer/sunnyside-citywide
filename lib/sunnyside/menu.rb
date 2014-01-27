@@ -21,7 +21,7 @@ module Sunnyside
         when '3'
           Sunnyside.parse_pdf
         when '4' 
-          Sunnyside::Report.new
+          Sunnyside.run_report
         when '5' 
           Sunnyside.cash_receipt
         when '6'

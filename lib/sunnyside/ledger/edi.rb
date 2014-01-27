@@ -3,8 +3,8 @@ module Sunnyside
     print "checking for new files...\n"
     Dir["#{DRIVE}/sunnyside-files/835/*.txt"].each do |file|
       print "processing #{file}...\n"
-      data = File.open(file).read
-
+      file_data = File.open(file)
+      data = file_data.read
       # Detect to see if the EDI file already has new lines inserted. If so, the newlines are removed before the file gets processed.
 
       data.gsub!(/\n/, '')
@@ -14,6 +14,7 @@ module Sunnyside
       edi_file = EdiReader.new(data)
       edi_file.parse_claims
       Filelib.insert(filename: file, purpose: '835')
+      file_data.close
       FileUtils.mv(file, "#{DRIVE}/sunnyside-files/835/archive/#{File.basename(file)}")
     end
   end

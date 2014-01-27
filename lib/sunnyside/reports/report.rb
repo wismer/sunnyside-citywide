@@ -83,5 +83,27 @@ module Sunnyside
     end   
   end
 
+  def self.check_prompt
+
+    Provider.all.each { |prov| puts "#{prov.id}: #{prov.name}"}
+    print "Type in the Provider ID: "
+
+    provider = Provider[gets.chomp]
+
+    Payment.where(provider_id: provider.id).all.each { |check| puts "#{check.id}: Number - #{check.check_number} Amount - #{check.check_total}"}
+    print "Type in the Check ID: "
+
+    payment = Payment[gets.chomp]
+
+    # For ICS checks, since for some reason the check number doesn't match the EDI TRN field.
+
+    if payment.provider_id == 12
+      print "type in the correct ICS check #: "
+      Payment.update(:check_number => gets.chomp)
+    end
+
+    yield payment 
+  end
+
 end
 
