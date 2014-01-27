@@ -21,7 +21,7 @@ module Sunnyside
       @payment   = payment
       @post_date = post_date
       @claims    = Claim.where(payment_id: payment.id)
-      @pdf       = Prawn::Document.new # generate("#{DRIVE}/sunnyside-files/pdf-reports/#{provider.name}-#{payment.check_number}.PDF", :page_layout => :landscape)
+      @pdf       = Prawn::Document.new(:page_layout => :landscape) # generate("#{DRIVE}/sunnyside-files/pdf-reports/#{provider.name}-#{payment.check_number}.PDF", :page_layout => :landscape)
       @total     = Money.new(payment.check_total * 100, 'USD').format
     end
 
@@ -87,17 +87,16 @@ module Sunnyside
 
     def initialize(claim, post_date, pdf, paid, billed)
       @claim     = claim
-      @claim_row = [claim.invoice_id, '', Client[claim.client_id].client_name, currency(billed), currency(paid), claim.control_number]
+      @claim_row = [claim.invoice_id, 'Date', Client[claim.client_id].client_name, 'Units', currency(billed), currency(paid), claim.control_number]
       @post_date = post_date
       @pdf       = pdf
-      @services  = Service.where(claim_id: claim.id).all.map { |svc| [svc.dos, svc.service_code, svc.units, currency(svc.paid), currency(svc.billed), svc.denial_reason] }
-      @opts      = { :column_widths => [85, 75, 75, 75, 75, 150], :cell_style => {:align => :center, :overflow => :shrink_to_fit, :size => 12, :height => 30 } }
+      @services  = Service.where(claim_id: claim.id).all.map { |svc| ['', svc.dos, svc.service_code, svc.units, currency(svc.paid), currency(svc.billed), svc.denial_reason] }
+      @opts      = { :column_widths => [85, 75, 75, 75, 75, 145], :cell_style => {:align => :center, :overflow => :shrink_to_fit, :size => 12, :height => 30 } }
     end
 
     def create_block
       pdf.table([claim_row], opts)
       pdf.move_down 10
-      pdf.position 
       pdf.table(services, opts)
     end
 

@@ -2,34 +2,37 @@ require "net/ftp"
 require 'rubygems'
 
 module Sunnyside
-  def self.access_ftp(process)
+  def self.access_ftp
     puts "1.) GUILDNET"
     puts "2.) ELDERSERVE"
     puts "3.) CPHL"
     print "Select option: "
     case gets.chomp
     when '1'
-      puts 'Password for Guildnet?'
+      print 'Username for Guildnet? '
+      username = gets.chomp
+      print 'Password for Guildnet? '
       pass = gets.chomp
-      access = SunnyFTP.new('mcogssideftp', pass, 'GUILDNET')
+      access = SunnyFTP.new(username, pass, 'GUILDNET')
     when '2'
-      puts 'Password for ELDERSERVE?'
+      print 'Username for ELDERSERVE? '
+      username = gets.chomp
+      print 'Password for ELDERSERVE? '
       pass = gets.chomp
-      access = SunnyFTP.new('mcoesunc', pass, 'ELDERSERVE')
+      access = SunnyFTP.new(username, pass, 'ELDERSERVE')
     when '3'
-      puts 'Password for CPHL?'
+      print 'Username for CPHL? '
+      username = gets.chomp
+      print 'Password for CPHL? '
       pass = gets.chomp
-      access = SunnyFTP.new('mcocetsunch', pass, 'CPHL')
+      access = SunnyFTP.new(username, pass, 'CPHL')
     else
       exit
     end
     access.log_on
     puts "Logged into #{access.name}..."
-    if process == :download
-      access.download_files
-    elsif process == :upload
-      access.upload_files
-    end
+    access.download_files
+    access.upload_files
   end
 
   class SunnyFTP
@@ -56,7 +59,7 @@ module Sunnyside
 
     def download_folder
       ftp.chdir('../outgoing')
-      if !empty?('.')
+      if ftp.nlst.size == 0
         puts "No files found. Exiting..."
         ftp.close
         return []
@@ -66,7 +69,7 @@ module Sunnyside
     end
 
     def up_files
-      Dir["#{DRIVE}/ftp/outgoing/*.txt"]
+      Dir["#{DRIVE}/sunnyside-files/ftp/837/#{name}/*.txt"]
     end
 
     def upload_files
@@ -76,7 +79,7 @@ module Sunnyside
           ftp.putbinaryfile(file)
           puts "Upload complete."
           puts "deleting #{file} in local folder."
-          FileUtils.mv(file, "#{DRIVE}/ftp/837/#{name}/#{File.basename(file)}")
+          FileUtils.mv(file, "#{DRIVE}/sunnyside-files/ftp/837/#{name}/#{File.basename(file)}")
         end
       }      
       ftp.close
@@ -94,7 +97,7 @@ module Sunnyside
       download_folder.each do |file|
         if !provider_folder.include?(file)
           puts "Downloading #{file}..."
-          ftp.getbinaryfile(file, "#{DRIVE}/ftp/835/#{name}/#{file}") if File.basename(file).include?('835')
+          ftp.getbinaryfile(file, "#{DRIVE}/sunnyside-files/ftp/835/#{name}/#{file}") if File.basename(file).include?('835')
           puts "#{file} placed."
         end
       end

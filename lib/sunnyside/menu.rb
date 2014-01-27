@@ -2,9 +2,9 @@ module Sunnyside
   class Menu
     def start
       loop do 
-        puts " 1.) LEDGER IMPORT #{new_files(:ledger)} new files" 
-        puts " 2.) EDI IMPORT #{new_files(:edi)} new files"
-        puts " 3.) 837 IMPORT #{new_files(:detail)} new files"
+        puts " 1.) LEDGER IMPORT" 
+        puts " 2.) EDI IMPORT"
+        puts " 3.) 837 IMPORT"
         puts " 4.) A/R REPORT"
         puts " 5.) CASH RECEIPT IMPORT"
         puts " 6.) ACCESS FTP"
@@ -25,8 +25,7 @@ module Sunnyside
         when '5' 
           Sunnyside.cash_receipt
         when '6'
-          Sunnyside.access_ftp(:download)
-          Sunnyside.access_ftp(:upload)
+          Sunnyside.access_ftp
         when '7'
           Sunnyside.show_opts
         when '8'
@@ -38,16 +37,6 @@ module Sunnyside
         else
           exit
         end
-      end
-    end
-
-    def new_files(type)
-      if type == :ledger
-        Dir["#{DRIVE}/sunnyside-files/summary/*.PDF", "#{DRIVE}/sunnyside-files/summary/*.pdf"].size
-      elsif type == :edi
-        Dir["#{DRIVE}/sunnyside-files/835/*.txt"].size
-      else
-        Dir["#{DRIVE}/sunnyside-files/837/*.PDF", "#{DRIVE}/sunnyside-files/837/*.pdf"].size
       end
     end
   end
