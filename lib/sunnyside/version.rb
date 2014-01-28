@@ -1,3 +1,3 @@
 module Sunnyside
-  VERSION = "0.0.6"
+  VERSION = "0.0.7" # stupid, no-good, lousy rubygems not letting me yank my bad install. grumble grumble...
 end
