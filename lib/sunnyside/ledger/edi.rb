@@ -2,6 +2,12 @@ module Sunnyside
   def self.edi_parser
     print "checking for new files...\n"
     Dir["#{DRIVE}/sunnyside-files/835/*.txt"].each do |file|
+      
+      if Filelib.where(filename: file).count > 0
+        puts "This file has been processed already. File removed."
+        File.rm(file) 
+      end
+
       print "processing #{file}...\n"
       file_data = File.open(file)
       data = file_data.read

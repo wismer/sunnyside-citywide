@@ -93,12 +93,18 @@ module Sunnyside
       provider_folder.include?(file)
     end
 
+    def timestamp(file)
+      ftp.mtime(file).strftime('%Y-%m-%d')
+    end
+
     def download_files
       download_folder.each do |file|
         if !provider_folder.include?(file)
-          puts "Downloading #{file}..."
-          ftp.getbinaryfile(file, "#{DRIVE}/sunnyside-files/ftp/835/#{name}/#{file}") if File.basename(file).include?('835')
-          puts "#{file} placed."
+          if file.include?('835')
+            puts "Downloading #{file}..."
+            ftp.getbinaryfile(file, "#{DRIVE}/sunnyside-files/ftp/835/#{name}/#{timestamp(file)}-#{file}") 
+            puts "#{file} placed, dated: #{timestamp(file)}."
+          end
         end
       end
       ftp.close
