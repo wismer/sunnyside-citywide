@@ -11,6 +11,8 @@ module Sunnyside
         puts " 7.) EXPIRING AUTHORIZATION REPORT"
         puts " 9.) MCO - MLTC HOURS UPDATE"
         puts "10.) CUSTOM QUERY"
+        puts "11.) ADD A NEW PROVIDER"
+        puts "12.) VIEW DATABASE ON WEB BROWSER"
         print "select option: "
         case gets.chomp
         when '1' 
@@ -34,6 +36,10 @@ module Sunnyside
           Sunnyside.run_mco_mltc
         when '10'
           Sunnyside.query
+        when '11'
+          Sunnyside.advanced_opts
+        when '12'
+          Sunnyside.rails_server
         else
           exit
         end

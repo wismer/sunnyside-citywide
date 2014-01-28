@@ -5,23 +5,23 @@ module Sunnyside
       
       if Filelib.where(filename: file).count > 0
         puts "This file has been processed already. File removed."
-        File.rm(file) 
+        File.delete(file) 
+      else
+        print "processing #{file}...\n"
+        file_data = File.open(file)
+        data = file_data.read
+        # Detect to see if the EDI file already has new lines inserted. If so, the newlines are removed before the file gets processed.
+
+        data.gsub!(/\n/, '')
+
+        data     = data.split(/~CLP\*/)
+
+        edi_file = EdiReader.new(data)
+        edi_file.parse_claims
+        Filelib.insert(filename: file, purpose: '835')
+        file_data.close
+        FileUtils.mv(file, "#{DRIVE}/sunnyside-files/835/archive/#{File.basename(file)}")  
       end
-
-      print "processing #{file}...\n"
-      file_data = File.open(file)
-      data = file_data.read
-      # Detect to see if the EDI file already has new lines inserted. If so, the newlines are removed before the file gets processed.
-
-      data.gsub!(/\n/, '')
-
-      data     = data.split(/~CLP\*/)
-
-      edi_file = EdiReader.new(data)
-      edi_file.parse_claims
-      Filelib.insert(filename: file, purpose: '835')
-      file_data.close
-      FileUtils.mv(file, "#{DRIVE}/sunnyside-files/835/archive/#{File.basename(file)}")
     end
   end
 
@@ -35,8 +35,6 @@ module Sunnyside
     def claims
       data.select { |clm| clm =~ /^\d+/ }.map { |clm| clm.split(/~(?=SVC)/) }
     end
-
-
 
     def check_number
       check = data[0][/(?<=~TRN\*\d\*)\w+/]

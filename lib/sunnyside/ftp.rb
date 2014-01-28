@@ -3,46 +3,23 @@ require 'rubygems'
 
 module Sunnyside
   def self.access_ftp
-    puts "1.) GUILDNET"
-    puts "2.) ELDERSERVE"
-    puts "3.) CPHL"
-    print "Select option: "
-    case gets.chomp
-    when '1'
-      print 'Username for Guildnet? '
-      username = gets.chomp
-      print 'Password for Guildnet? '
-      pass = gets.chomp
-      access = SunnyFTP.new(username, pass, 'GUILDNET')
-    when '2'
-      print 'Username for ELDERSERVE? '
-      username = gets.chomp
-      print 'Password for ELDERSERVE? '
-      pass = gets.chomp
-      access = SunnyFTP.new(username, pass, 'ELDERSERVE')
-    when '3'
-      print 'Username for CPHL? '
-      username = gets.chomp
-      print 'Password for CPHL? '
-      pass = gets.chomp
-      access = SunnyFTP.new(username, pass, 'CPHL')
-    else
-      exit
+    CSV.foreach("#{DRIVE}/sunnyside-files/ftp/login.csv") do |row|
+      access = SunnyFTP.new(username: row[1], password: row[2], provider: row[0])
+      access.log_on
+      puts "Logged into #{access.name}..."
+      access.download_files
+      access.upload_files
     end
-    access.log_on
-    puts "Logged into #{access.name}..."
-    access.download_files
-    access.upload_files
   end
 
   class SunnyFTP
     attr_reader :ftp, :username, :password, :name, :directory
 
-    def initialize(username, password, name)
+    def initialize(login = {})
       @ftp      = Net::FTP.new('depot.per-se.com')
-      @username = username
-      @password = password
-      @name     = name      
+      @username = login[:username]
+      @password = login[:password]
+      @name     = login[:provider]      
     end
 
     def log_on

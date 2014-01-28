@@ -16,13 +16,15 @@ require 'sunnyside/ftp'
 require 'sunnyside/menu'
 require 'sunnyside/expiring_auth'
 require 'sunnyside/models/db_setup'
+require 'sunnyside/advanced'
 
 module Sunnyside
   DRIVE   = ENV["HOMEDRIVE"]
   
   Sunnyside.create_folders if !Dir.exist?("#{DRIVE}/sunnyside-files")
-    
-  DB = Sequel.connect("sqlite:/#{DRIVE}/sunnyside-files/db/sunnyside.db")
+  Sunnyside.create_ftp_login_data if !File.exist?("#{DRIVE}/sunnyside-files/ftp/login.csv")
+  Dir.chdir("R:/Departments/AR Department")
+  DB = Sequel.connect("sqlite://sunnyside.db")
 
   if DB.tables.empty?
     Sunnyside.create_tables

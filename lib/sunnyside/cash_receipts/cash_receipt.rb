@@ -87,7 +87,7 @@ module Sunnyside
     def collate
       puts "Total Amount Paid for this check is: #{total}\nProcessing..."
       populated_data.each do |clm| 
-        if not_paid_fully?(clm)
+        if !not_fully_paid?(clm)
           self.receivable_csv(clm, payment, post_date)  
         else
           print "#{clm.invoice_id} was not added to the spreadsheet because the invoice was already fully paid for.\n"
@@ -105,7 +105,7 @@ module Sunnyside
     end
 
     def denied_services
-      Service.where(payment_id: payment.id).exclude(denial_reason: nil).count
+      Service.where(payment_id: payment.id).exclude(denial_reas on: nil).count
     end
   end
 
