@@ -4,7 +4,7 @@ module Sunnyside
   # report page by page, it would be best to compress the text from every page into a single string and then parse from there.
 
   def self.parse_pdf
-    files = Dir["#{DRIVE}/sunnyside-files/837/*.PDF", "#{DRIVE}/sunnyside-files/837/*.pdf"].select { |file| Filelib.where(filename: file).count == 0 }
+    files = Dir["#{DRIVE}/sunnyside-files/837/*.PDF"].select { |file| Filelib.where(filename: file).count == 0 }
     files.each do |file|
       puts "processing #{file}..."
       data = PDF::Reader.new(file).pages.map { |page| page.raw_content.gsub(/^\(\s|\)'$/, '') }.join

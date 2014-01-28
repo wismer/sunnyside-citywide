@@ -54,12 +54,19 @@ module Sunnyside
       puts "Whoops! It appears #{Client[inv.client_id].client_name} for #{prov.name} doesn't have a fund id. Please retrieve it from FUND EZ and type it in now."
       Client.where(client_number: inv.client_id).update(:fund_id => gets.chomp)
     end
+
+    prov_name = if prov.name == 'AMERIGROUP 2'
+                  'AMERIGROUP'
+                else
+                  prov.name
+                end
+
     fund_id = Client[inv.client_id].fund_id
     CSV.open("#{DRIVE}/sunnyside-files/new-ledger/#{inv.post_date}-IMPORT-FUND-EZ-LEDGER.csv", "a+") do |row|
       row << [1, 
                 inv.invoice_number, 
                 post_date.strftime('%m/%d/%y'), 
-                fund_id, prov.name, post_date.strftime('%m/%d/%y'), 
+                fund_id, prov_name, post_date.strftime('%m/%d/%y'), 
                 "To Record #{post_date.strftime('%m/%d/%y')} Billing", 
                 "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}", 
                 post_date.strftime('%m/%d/%y'), 
@@ -71,7 +78,7 @@ module Sunnyside
                 inv.invoice_number, 
                 post_date.strftime('%m/%d/%y'), 
                 fund_id, 
-                prov.name, 
+                prov_name, 
                 post_date.strftime('%m/%d/%y'), 
                 "To Record #{post_date.strftime('%m/%d/%y')} Billing", 
                 "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}", 

@@ -35,6 +35,7 @@ module Sunnyside
     end
 
     def export_to_csv
+      CSV.open("#{DRIVE}/sunnyside-files/new-ledger/#{inv.post_date}-IMPORT-FUND-EZ-LEDGER.csv", "a+") { |row| row << ['Seq','inv','post_date','other id','prov','invoice','header memo','batch','doc date','detail memo','fund','account','cc1','cc2','cc3','debit','credit'] }
       Invoice.where(post_date: post_date).all.each { |inv| self.payable_csv(inv, post_date) }
     end
   end

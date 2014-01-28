@@ -86,7 +86,7 @@ module Sunnyside
     end
 
     def provider_folder
-      Dir["ftp/835/#{name}"].map { |file| File.basename(file) }
+      Dir["#{DRIVE}/sunnyside-files/ftp/835/#{name}"].map { |file| File.basename(file) }
     end
 
     def new_file?(file)

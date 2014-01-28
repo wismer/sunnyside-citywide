@@ -58,7 +58,15 @@ module Sunnyside
         manual.create_csv
       end
     end
+
+    def provider
+      Provider.all.each { |prov| puts "#{prov.id}: #{prov.name}"}
+      print "Type in the Provider ID: "
+      return Provider[gets.chomp] || ''
+    end
   end
+
+
 
   class EdiPayment
     include Sunnyside
@@ -78,9 +86,22 @@ module Sunnyside
 
     def collate
       puts "Total Amount Paid for this check is: #{total}\nProcessing..."
-      populated_data.each { |inv| self.receivable_csv(inv, payment, post_date) }
-      puts "Check added to #{DRIVE}/EDI-citywide-import.csv"
-      puts "Please note that there are #{denied_services} service days with possible denials"
+      populated_data.each do |clm| 
+        if not_paid_fully?(clm)
+          self.receivable_csv(clm, payment, post_date)  
+        else
+          print "#{clm.invoice_id} was not added to the spreadsheet because the invoice was already fully paid for.\n"
+          print "Please consider this $#{clm.paid} as an interest payment.\n"
+        end
+      end
+      puts "----------------------------------------------------------------------------------------------------------"
+      puts "------------------------------Check added to #{DRIVE}/EDI-citywide-import.csv-----------------------------"
+      puts "-------------Please note that there are #{denied_services} service days with possible denials-------------"
+      puts "----------------------------------------------------------------------------------------------------------"
+    end
+
+    def not_fully_paid?(clm)
+      Claim.where(invoice_id: clm.invoice_id).sum(:paid).round(2) < clm.paid
     end
 
     def denied_services
@@ -152,11 +173,10 @@ module Sunnyside
       denied_invoices.each { |inv| 
         services     = Service.where(invoice_id: inv.invoice_number, payment_id: payment_id)
         edit_service = EditService.new(services) 
-        print "How many services do you wish to change? "
-        gets.chomp.to_i.times do  
-          edit_service.show_all
-          edit_service.adjust
-        end
+        edit_service.show_all
+
+        edit_service.adjust
+        
         adjust_claim(inv)
       }
     end
@@ -183,13 +203,15 @@ module Sunnyside
     end
 
     def adjust
-      print "Type in the Service ID # to change the amount: "
-      id     = gets.chomp
-      print "You selected #{id} - Type in the adjusted amount: "
-      amt    = gets.chomp
-      print "And now type in the denial reason: "
-      reason = gets.chomp
-      adjust_service(id, amt, reason)
+      print "Type in the Service(s) ID # to change the amount: "
+      ids     = gets.chomp.split
+      ids.each do |id|
+        print "You selected #{id} - Type in the adjusted amount: "
+        amt    = gets.chomp
+        print "And now type in the denial reason: "
+        reason = gets.chomp
+        adjust_service(id, amt, reason)
+      end
     end
 
     def adjust_service(id, amt, reason)
