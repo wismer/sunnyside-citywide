@@ -12,27 +12,7 @@ module Sunnyside
       @file            = file
       @selected        = []
     end
-
-    def tabickman
-      selected_pages('TABICKMAN')
-    end
-
-    def jibaja
-      selected_pages('JIBAJA')
-    end
-
-    def community
-      selected_pages('SUNNYSIDE COMMUNITY')
-    end
-
-    def jensen
-      selected_pages('JENSEN')
-    end
-
-    def barrow
-      selected_pages('BARROW')
-    end
-
+    
     def selected_pages(name)
       PDF::Reader.new(file).pages.select { |page| page.text.include?(name) && page.text.include?('Client Copy') }.map { |page| page.number }
     end

@@ -22,7 +22,8 @@ module Sunnyside
       puts ""
       puts "---------------------------------------------------"
       print "Is this correct? (Y for yes, N for No): "
-      if gets.chomp == 'Y'
+      raise 'You have an empty field! Start over!' if [provider, credit, debit, fund, abbrev].any? { |elem| elem.empty? }
+      if gets.chomp.upcase == 'Y'
         provider = Provider.insert(name: provider, credit_account: credit, debit_account: debit, fund: fund, abbreviation: abbrev)
         puts "#{Provider[provider].name} added."
       else
@@ -34,11 +35,16 @@ module Sunnyside
   end
 
   def self.rails_server
-    Dir.chdir("#{DRIVE}/sunnyside-files/sunnyside-app")
     puts "Open your web browser and type in this in the address bar (and then press enter): http://localhost:3000/providers"
     puts "Please wait..."
-    %x(start /max http://localhost:3000/providers)
-    %x(rails s)
     Dir.chdir("#{DRIVE}/Program Files/Mozilla Firefox")
+
+    %x(start /max http://localhost:3000/providers)
+
+    puts "Web browser launched. Now launching server..."
+    
+    Dir.chdir("#{DRIVE}/sunnyside-files/sunnyside-app")
+
+    %x(rails s)
   end
 end

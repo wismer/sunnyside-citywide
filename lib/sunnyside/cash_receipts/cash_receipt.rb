@@ -53,9 +53,17 @@ module Sunnyside
         print "Enter in the check number: "
         check    = gets.chomp
         invoices = invoice_selection
-        manual   = ManualPayment.new(invoices, post_date, prov, check) 
-        manual.seed_claims_and_services
-        manual.create_csv
+        if invoices_exist?(invoices)
+          manual   = ManualPayment.new(invoices, post_date, prov, check) 
+          manual.seed_claims_and_services
+          manual.create_csv
+        else
+          manual_invoices
+        end
+      end
+
+      def invoices_exist?(invoices)
+        invoices.map { |invoice| invoice.gsub(/-d/, '') }.all? { |invoice| !Invoice[invoice].nil? }
       end
     end
 
@@ -111,7 +119,7 @@ module Sunnyside
 
   class ManualPayment
     include Sunnyside
-    attr_reader :denied_invoices, :paid_invoices, :post_date, :provider, :check, :payment_id
+    attr_reader :denied_invoices, :paid_invoices, :post_date, :provider, :check, :payment_id, :total
 
     def initialize(invoices, post_date, prov, check)
       @denied_invoices = invoices.select { |inv| inv.include?('-d') }.map { |inv| Invoice[inv.gsub(/-d/, '')] }
@@ -120,6 +128,7 @@ module Sunnyside
       @provider        = prov
       @check           = check
       @payment_id      = Payment.insert(check_number: check, post_date: post_date, provider_id: prov.id)
+      @total           = 0.0
     end
 
     def seed_claims_and_services
@@ -130,8 +139,17 @@ module Sunnyside
       edit_services if denied_invoices.length > 0
     end
 
+    def not_fully_paid?(clm)
+      Claim.where(invoice_id: clm.invoice_id).sum(:paid).round(2) < clm.paid
+    end
+
     def create_csv
-      claims.each { |clm| self.receivable_csv(clm, Payment[payment_id], post_date) if clm.paid > 0.0 }
+      claims.each { |clm| 
+        if clm.paid > 0.0 && !not_fully_paid?(clm)
+          puts "-----------------------Total so far: #{total += clm.paid}"
+          self.receivable_csv(clm, Payment[payment_id], post_date) 
+        end
+      }
     end
 
     def claims
