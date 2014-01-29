@@ -100,16 +100,18 @@ module Sunnyside
     Payment.where(provider_id: provider.id).all.each { |check| puts "#{check.id}: Number - #{check.check_number} Amount - #{check.check_total}"}
     print "Type in the Check ID: "
 
-    payment = Payment[gets.chomp]
+    payments = gets.chomp.split.map { |chk| Payment[chk] }
 
     # For ICS checks, since for some reason the check number doesn't match the EDI TRN field.
 
-    if payment.provider_id == 12
-      print "type in the correct ICS check #: "
-      Payment.update(:check_number => gets.chomp)
-    end
+    payments.each do |payment|
+      if payment.provider_id == 12
+        print "type in the correct ICS check #: "
+        payment.update(:check_number => gets.chomp)
+      end
 
-    yield payment 
+      yield payment 
+    end
   end
 
 end

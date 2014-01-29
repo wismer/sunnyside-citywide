@@ -1,25 +1,6 @@
 module Sunnyside
 
   class << self
-
-    def create_ftp_login_data
-      CSV.open("#{DRIVE}/sunnyside-files/ftp/login.csv", 'a+') do |row|
-        print "How many providers do you want to enter? "
-        gets.chomp.to_i.times do 
-          print 'Enter in the name of the provider (please omit the use of special characters - make it a single word, if possible): '
-          provider = gets.chomp.upcase
-          puts "Enter in the username and the password for #{provider}, each seperated by a single space."
-          username, pass = gets.chomp.split
-
-          row << [provider, username, pass]
-
-          if !Dir.exist?("#{DRIVE}/sunnyside-files/ftp/#{provider}") 
-            ["#{provider}" ,"#{provider}/835", "#{provider}/837"].each { |prov| Dir.mkdir("#{DRIVE}/sunnyside-files/ftp/#{prov}/") }
-          end
-        end
-      end
-    end
-
     def create_folders
       folders     = ['db', '835', '837', 'summary', 'cash_receipts', 'new-ledger', 'private', 'private/archive', 
                      'summary/archive', '837/archive', '835/archive', 'ftp', 'ftp/837', 'ftp/837/GUILDNET', 'ftp/837/CPHL', 'ftp/837/ELDERSERVE',
@@ -160,7 +141,7 @@ module Sunnyside
     end
 
     def add_denial_data
-      CSV.foreach('examples/denial_data.csv', 'r') { |row| DB[:denials].insert(denial_code: row[0], denial_explanation: row[1]) }
+      # CSV.foreach('examples/denial_data.csv', 'r') { |row| DB[:denials].insert(denial_code: row[0], denial_explanation: row[1]) }
     end
 
     def add_providers

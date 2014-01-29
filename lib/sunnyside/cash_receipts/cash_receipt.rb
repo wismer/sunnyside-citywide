@@ -62,9 +62,10 @@ module Sunnyside
         end
       end
 
-      def invoices_exist?(invoices)
-        invoices.map { |invoice| invoice.gsub(/-d/, '') }.all? { |invoice| !Invoice[invoice].nil? }
-      end
+    end
+
+    def invoices_exist?(invoices)
+      invoices.map { |invoice| invoice.gsub(/-d/, '') }.all? { |invoice| !Invoice[invoice].nil? }
     end
 
     def provider
@@ -108,12 +109,14 @@ module Sunnyside
       puts "----------------------------------------------------------------------------------------------------------"
     end
 
+
+
     def not_fully_paid?(clm)
       Claim.where(invoice_id: clm.invoice_id).sum(:paid).round(2) < clm.paid
     end
 
     def denied_services
-      Service.where(payment_id: payment.id).exclude(denial_reas on: nil).count
+      Service.where(payment_id: payment.id).exclude(denial_reason: nil).count
     end
   end
 
@@ -140,16 +143,17 @@ module Sunnyside
     end
 
     def not_fully_paid?(clm)
-      Claim.where(invoice_id: clm.invoice_id).sum(:paid).round(2) < clm.paid
+      Claim.where(invoice_id: clm.invoice_id).sum(:paid).round(2) < Invoice[clm.invoice_id].amount
     end
 
     def create_csv
       claims.each { |clm| 
-        if clm.paid > 0.0 && !not_fully_paid?(clm)
+        if clm.paid > 0.0 
           puts "-----------------------Total so far: #{total += clm.paid}"
           self.receivable_csv(clm, Payment[payment_id], post_date) 
         end
       }
+      Payment[payment_id].update(check_total: check_total)
     end
 
     def claims
@@ -157,11 +161,17 @@ module Sunnyside
     end
 
     def create_claim(invoice)
+      paid =  if invoice.provider_id == 22  # for the stupid rate that village care max pays
+                (invoice.amount * 0.999365).round(2)
+              else
+                invoice.amount
+              end
+
       Claim.insert(
         :invoice_id   => invoice.invoice_number, 
         :client_id    => invoice.client_id, 
         :billed       => invoice.amount, 
-        :paid         => invoice.amount, 
+        :paid         => paid, 
         :payment_id   => payment_id, 
         :provider_id  => invoice.provider_id
       )
@@ -206,6 +216,10 @@ module Sunnyside
     def adjust_claim(inv)
       service_sum = Service.where(payment_id: payment_id, invoice_id: inv.invoice_number).sum(:paid).round(2)
       Claim.where(invoice_id: inv.invoice_number, payment_id: payment_id).update(:paid => service_sum)
+    end
+
+    def check_total
+      Claim.where(payment_id: payment.id).sum(:paid).round(2)
     end
   end
 

@@ -10,4 +10,5 @@ module Sunnyside
   class Provider < Sequel::Model; end
   class Visit < Sequel::Model; end
   class Denial < Sequel::Model; end
+  class Login < Sequel::Model; end
 end

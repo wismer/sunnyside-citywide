@@ -13,6 +13,7 @@ module Sunnyside
         puts "10.) CUSTOM QUERY"
         puts "11.) ADD A NEW PROVIDER"
         puts "12.) VIEW DATABASE ON WEB BROWSER"
+        puts "13.) ADD LOGIN CREDENTIALS FOR NEW FTP EDI FILE TRANSFER"
         print "select option: "
         case gets.chomp
         when '1' 
@@ -40,6 +41,8 @@ module Sunnyside
           Sunnyside.advanced_opts
         when '12'
           Sunnyside.rails_server
+        when '13'
+          Sunnyside.add_provider_to_ftp
         else
           exit
         end

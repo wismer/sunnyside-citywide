@@ -3,12 +3,11 @@ require 'rubygems'
 
 module Sunnyside
   def self.access_ftp
-    CSV.foreach("#{DRIVE}/sunnyside-files/ftp/login.csv") do |row|
-      access = SunnyFTP.new(username: row[1], password: row[2], provider: row[0])
+    Login.all.each do |login|
+      access = SunnyFTP.new(site: login.site, username: login.username, password: login.password, provider: login.provider)
       access.log_on
       puts "Logged into #{access.name}..."
-      access.download_files
-      access.upload_files
+      access.check_for_new_files
     end
   end
 
@@ -16,7 +15,7 @@ module Sunnyside
     attr_reader :ftp, :username, :password, :name, :directory
 
     def initialize(login = {})
-      @ftp      = Net::FTP.new('depot.per-se.com')
+      @ftp      = Net::FTP.new(login[:site])
       @username = login[:username]
       @password = login[:password]
       @name     = login[:provider]      
@@ -26,65 +25,100 @@ module Sunnyside
       ftp.login(username, password)
     end
 
-    def empty?(folder)
-      ftp.list(folder) == ["total 0"]
+    def check_for_new_files
+      ftp.chdir("../outgoing")
+      incoming = IncomingFiles.new(ftp, name)
+      incoming.download_files
+
+      ftp.chdir("../incoming")
+      outgoing = OutgoingFiles.new(ftp, name)
+      outgoing.upload_files
+
+      puts "Exiting #{name}..."
+      ftp.close
     end
 
-    def outgoing_contents
-      ftp.nlst('../outgoing') if empty?('../outgoing') 
+
+    def new_files
+      files.map { |file| timestamp(file) + "-#{file}" }.select { |file| provider_folder.include?(timestamp(file)) }.size > 0
+    end
+  end
+
+  class IncomingFiles < SunnyFTP
+    attr_reader :file_records, :ftp_files, :ftp, :name
+
+    def initialize(ftp, name)
+      @file_records = Dir["#{DRIVE}/sunnyside-files/ftp/835/#{name}/*.pgp"].map { |file| File.basename(file).gsub(/^.{11}/, '') }
+      @ftp_files    = ftp.nlst.select { |file| file.include?('835') }
+      @ftp          = ftp
+      @name         = name
     end
 
-    def download_folder
-      ftp.chdir('../outgoing')
-      if ftp.nlst.size == 0
-        puts "No files found. Exiting..."
-        ftp.close
-        return []
+    def new_files
+      ftp_files.select { |file| !file_records.include?(file) }
+    end
+
+    def download_files
+      if new_files.size > 0
+        new_files.each { |file| download_file(file) }
       else
-        return ftp.nlst
+        puts "No new files to download."
       end
     end
 
-    def up_files
+    def timestamp(file)
+      ftp.mtime(file).strftime('%Y-%m-%d') + "-#{File.basename(file)}"
+    end
+
+    def download_file(file)
+      puts "Downloading #{file}..."
+      ftp.getbinaryfile(file, "#{DRIVE}/sunnyside-files/ftp/835/#{name}/#{timestamp(file)}")
+    end
+  end
+
+  class OutgoingFiles < SunnyFTP
+    attr_reader :ftp, :name
+
+    def initialize(ftp, name)
+      @name = name
+      @ftp  = ftp
+    end
+
+    def new_files
       Dir["#{DRIVE}/sunnyside-files/ftp/837/#{name}/*.txt"]
     end
 
     def upload_files
-      up_files.each { |file| 
-        if file.include?(name)
-          puts "uploading #{file} for #{name}"
-          ftp.putbinaryfile(file)
-          puts "Upload complete."
-          puts "deleting #{file} in local folder."
-          FileUtils.mv(file, "#{DRIVE}/sunnyside-files/ftp/837/#{name}/#{File.basename(file)}")
-        end
-      }      
-      ftp.close
-    end
-
-    def provider_folder
-      Dir["#{DRIVE}/sunnyside-files/ftp/835/#{name}"].map { |file| File.basename(file) }
-    end
-
-    def new_file?(file)
-      provider_folder.include?(file)
-    end
-
-    def timestamp(file)
-      ftp.mtime(file).strftime('%Y-%m-%d')
-    end
-
-    def download_files
-      download_folder.each do |file|
-        if !provider_folder.include?(file)
-          if file.include?('835')
-            puts "Downloading #{file}..."
-            ftp.getbinaryfile(file, "#{DRIVE}/sunnyside-files/ftp/835/#{name}/#{timestamp(file)}-#{file}") 
-            puts "#{file} placed, dated: #{timestamp(file)}."
-          end
-        end
+      if new_files.size > 0
+        new_files.each { |file| upload_file(file) }
+      else
+        puts "No new files to upload."
       end
-      ftp.close
+    end
+
+    def upload_file(file)
+      ftp.putbinaryfile(file)
+      puts "#{file} uploaded."
+      puts "Deleting local file..."
+      File.delete(file)
+      puts "File deleted."
     end
   end
 end
+
+    # def up_files
+    #   Dir["#{DRIVE}/sunnyside-files/ftp/837/#{name}/*.txt"]
+    # end
+
+    # def upload_files
+    #   up_files.each { |file| 
+    #     if file.include?(name)
+    #       puts "uploading #{file} for #{name}"
+    #       ftp.putbinaryfile(file)
+    #       puts "Upload complete."
+    #       puts "deleting #{file} in local folder."
+    #       FileUtils.mv(file, "#{DRIVE}/sunnyside-files/ftp/837/#{name}/#{File.basename(file)}")
+    #     end
+    #   }      
+    #   ftp.close
+    # end

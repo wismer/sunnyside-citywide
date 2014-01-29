@@ -22,7 +22,6 @@ module Sunnyside
   DRIVE   = ENV["HOMEDRIVE"]
   
   Sunnyside.create_folders if !Dir.exist?("#{DRIVE}/sunnyside-files")
-  Sunnyside.create_ftp_login_data if !File.exist?("#{DRIVE}/sunnyside-files/ftp/login.csv")
   Dir.chdir("R:/Departments/AR Department")
   DB = Sequel.connect("sqlite://sunnyside.db")
 
