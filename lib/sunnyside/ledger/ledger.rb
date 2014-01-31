@@ -2,7 +2,8 @@ require 'prawn'
 module Sunnyside
   # This should be redone.
   def self.ledger_file
-    Dir["#{DRIVE}/sunnyside-files/summary/*.PDF"].each {|file| 
+    files = Dir["#{DRIVE}/sunnyside-files/summary/*.PDF"] 
+    files.each do |file| 
       if Filelib.where(filename: file).count == 0 
         puts "processing #{file}..."
         ledger = Ledger.new(file)
@@ -11,7 +12,29 @@ module Sunnyside
         FileUtils.mv(file, "#{DRIVE}/sunnyside-files/summary/archive/#{File.basename(file)}")
         ledger.export_to_csv
       end
-    }
+    end
+
+    if files.size == 0
+      puts "It appears there are no new files to process. Do you wish to create a csv file for a specific post date? (Y or N) "
+      if gets.chomp.downcase == 'y'
+        print "enter the date (YYYY-MM-DD): "
+        post_date = Date.parse(gets.chomp)
+        puts "File being created..."
+        LedgerReport.new(post_date)
+      end
+    end
+  end
+
+  class LedgerReport
+    include Sunnyside
+
+    def initialize(post_date)
+      create_report(post_date)
+    end
+
+    def create_report(post_date)
+      Invoice.where(post_date: post_date).all.each { |inv| self.payable_csv(inv, post_date) }
+    end
   end
   
   class Ledger
@@ -35,7 +58,7 @@ module Sunnyside
     end
 
     def export_to_csv
-      CSV.open("#{DRIVE}/sunnyside-files/new-ledger/#{inv.post_date}-IMPORT-FUND-EZ-LEDGER.csv", "a+") { |row| row << ['Seq','inv','post_date','other id','prov','invoice','header memo','batch','doc date','detail memo','fund','account','cc1','cc2','cc3','debit','credit'] }
+      CSV.open("#{DRIVE}/sunnyside-files/new-ledger/#{post_date}-IMPORT-FUND-EZ-LEDGER.csv", "a+") { |row| row << ['Seq','inv','post_date','other id','prov','invoice','header memo','batch','doc date','detail memo','fund','account','cc1','cc2','cc3','debit','credit'] }
       Invoice.where(post_date: post_date).all.each { |inv| self.payable_csv(inv, post_date) }
     end
   end

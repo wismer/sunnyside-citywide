@@ -9,6 +9,7 @@ module Sunnyside
         puts " 5.) CASH RECEIPT IMPORT"
         puts " 6.) ACCESS FTP"
         puts " 7.) EXPIRING AUTHORIZATION REPORT"
+        puts " 8.) EXPORT PRIVATE CLIENT PDF'S"
         puts " 9.) MCO - MLTC HOURS UPDATE"
         puts "10.) CUSTOM QUERY"
         puts "11.) ADD A NEW PROVIDER"
@@ -32,7 +33,7 @@ module Sunnyside
         when '7'
           Sunnyside.show_opts
         when '8'
-          Sunnyside.process_private
+          Sunnyside.private_clients
         when '9'
           Sunnyside.run_mco_mltc
         when '10'

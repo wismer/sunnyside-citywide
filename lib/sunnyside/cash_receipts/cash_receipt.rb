@@ -149,7 +149,6 @@ module Sunnyside
     def create_csv
       claims.each { |clm| 
         if clm.paid > 0.0 
-          puts "-----------------------Total so far: #{total += clm.paid}"
           self.receivable_csv(clm, Payment[payment_id], post_date) 
         end
       }
@@ -219,7 +218,7 @@ module Sunnyside
     end
 
     def check_total
-      Claim.where(payment_id: payment.id).sum(:paid).round(2)
+      Claim.where(payment_id: payment_id).sum(:paid).round(2)
     end
   end
 
