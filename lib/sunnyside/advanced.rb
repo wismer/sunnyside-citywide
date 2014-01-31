@@ -35,13 +35,8 @@ module Sunnyside
 
   def self.rails_server
     puts "Please wait..."
-    Sunnyside.determine_browser
 
-    %x(start /max http://localhost:3000/providers)
-
-    puts "Web browser launched. Now launching server..."
-
-    Dir.chdir("#{DRIVE}/sunnyside-files/sunnyside-app")
+    Dir.chdir("R:/Departments/AR Department/sunnyside-app")
 
     %x(rails s)
   end

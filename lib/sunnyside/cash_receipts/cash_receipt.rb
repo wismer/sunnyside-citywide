@@ -61,7 +61,6 @@ module Sunnyside
           manual_invoices
         end
       end
-
     end
 
     def invoices_exist?(invoices)
