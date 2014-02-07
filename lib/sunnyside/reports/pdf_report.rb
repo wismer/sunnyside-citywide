@@ -62,7 +62,7 @@ module Sunnyside
 
       page_numbering
 
-      pdf.render_file("#{DRIVE}/sunnyside-files/pdf-reports/#{provider.name}-#{payment.check_number}.PDF")
+      pdf.render_file("#{DRIVE}/sunnyside-files/pdf-reports/#{provider.name.gsub(/[\.\/]/, '')}-#{payment.check_number}.PDF")
     end
 
     def page_numbering
