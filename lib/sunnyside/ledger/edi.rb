@@ -18,7 +18,7 @@ module Sunnyside
 
         edi_file = EdiReader.new(data)
         edi_file.parse_claims
-        Filelib.insert(filename: file, purpose: '835')
+        Filelib.insert(filename: File.basename(file), purpose: '835')
         file_data.close
         FileUtils.mv(file, "#{DRIVE}/sunnyside-files/835/archive/#{File.basename(file)}")  
       end

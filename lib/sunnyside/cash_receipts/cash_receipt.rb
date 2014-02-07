@@ -3,14 +3,18 @@ module Sunnyside
   def self.cash_receipt
     puts "1.) EDI PAYMENT"
     puts "2.) MANUAL PAYMENT"
-    cash_receipt = 
-      case gets.chomp
-      when '1'
-        CashReceipt.new(:electronic)
-      when '2'
-        CashReceipt.new(:manual)
-      end
-    cash_receipt.collate
+    puts "3.) RESET A/R SPREADSHEET"
+    case gets.chomp
+    when '1'
+      cash_receipt = CashReceipt.new(:electronic)
+    when '2'
+      cash_receipt = CashReceipt.new(:manual)
+    when '3'
+      CSV.open("#{DRIVE}/sunnyside-files/cash_receipts/EDI-citywide-import.csv", "w") { |row| 
+        row << ['Seq','Receipt','post_date','other id','invoice','header memo','batch','doc date','detail memo','fund','account','cc1','cc2','cc3','debit','credit']
+      }
+    end
+    cash_receipt.collate if cash_receipt
   end
 
   class CashReceipt
@@ -39,9 +43,9 @@ module Sunnyside
       print "You have typed out #{invoices.length} number of invoices. Do you wish to add more to the same check? (Y or N): "
       if gets.chomp.upcase == 'Y'
         more_invoices = gets.chomp.split
-        return (more_invoices + invoices)
+        return (more_invoices + invoices).uniq
       else
-        return invoices
+        return invoices.uniq
       end
     end
 
