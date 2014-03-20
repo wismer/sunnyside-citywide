@@ -25,7 +25,7 @@ module Sunnyside
     include Sunnyside
 
     def initialize(type)
-      @type = type        
+      @type = type
     end
 
     def show_options

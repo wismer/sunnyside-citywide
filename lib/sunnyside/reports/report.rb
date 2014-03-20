@@ -9,41 +9,41 @@ module Sunnyside
     fund_id  = Client[claim.client_id].fund_id
     puts "#{total.round(2)} #{Client[claim.client_id].client_name} "
     CSV.open("#{DRIVE}/sunnyside-files/cash_receipts/EDI-citywide-import.csv", "a+") do |row| # #{post_date.gsub(/\//, '-')}-
-      row << [1, payment.check_number, 
-                post_date, 
-                fund_id, 
-                claim.invoice_id, 
-                claim.invoice_id, 
-                "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}", 
-                post_date, 
-                claim.invoice_id, 
+      row << [1, payment.check_number,
+                post_date,
+                fund_id,
+                claim.invoice_id,
+                claim.invoice_id,
+                "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}",
+                post_date,
+                claim.invoice_id,
                 prov.fund, prov.credit_account,'','','', 0,  total]
-      row << [2, payment.check_number, 
-                post_date, 
-                fund_id, 
-                claim.invoice_id, 
-                claim.invoice_id, 
+      row << [2, payment.check_number,
+                post_date,
+                fund_id,
+                claim.invoice_id,
+                claim.invoice_id,
                 "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}",
-                post_date, 
-                claim.invoice_id, 
+                post_date,
+                claim.invoice_id,
                 100,         1000,'','','', total,    0]
-      row << [3, payment.check_number, 
-                post_date, 
-                fund_id, 
-                claim.invoice_id, 
-                claim.invoice_id, 
+      row << [3, payment.check_number,
+                post_date,
+                fund_id,
+                claim.invoice_id,
+                claim.invoice_id,
                 "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}",
-                post_date, 
-                claim.invoice_id, 
+                post_date,
+                claim.invoice_id,
                 prov.fund,         3990, '', '', '', total, 0]
-      row << [4, payment.check_number, 
-                post_date, 
-                fund_id, 
-                claim.invoice_id, 
-                claim.invoice_id, 
+      row << [4, payment.check_number,
+                post_date,
+                fund_id,
+                claim.invoice_id,
+                claim.invoice_id,
                 "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}",
-                post_date, 
-                claim.invoice_id, 
+                post_date,
+                claim.invoice_id,
                 100,         3990, '', '', '', 0, total]
     end
   end
@@ -63,31 +63,31 @@ module Sunnyside
 
     fund_id = Client[inv.client_id].fund_id
     CSV.open("#{DRIVE}/sunnyside-files/new-ledger/#{inv.post_date}-IMPORT-FUND-EZ-LEDGER.csv", "a+") do |row|
-      row << [1, 
-                inv.invoice_number, 
-                post_date.strftime('%m/%d/%y'), 
-                fund_id, prov_name, post_date.strftime('%m/%d/%y'), 
-                "To Record #{post_date.strftime('%m/%d/%y')} Billing", 
-                "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}", 
-                post_date.strftime('%m/%d/%y'), 
-                "To Rec for W/E #{post_date - 6} Billing", 
-                prov.fund, 
-                prov.credit_account,          
+      row << [1,
+                inv.invoice_number,
+                post_date.strftime('%m/%d/%y'),
+                fund_id, prov_name, post_date.strftime('%m/%d/%y'),
+                "To Record #{post_date.strftime('%m/%d/%y')} Billing",
+                "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}",
+                post_date.strftime('%m/%d/%y'),
+                "To Rec for W/E #{post_date - 6} Billing",
+                prov.fund,
+                prov.credit_account,
                 '', '',             '',              inv.amount,                   '']
-      row << [2, 
-                inv.invoice_number, 
-                post_date.strftime('%m/%d/%y'), 
-                fund_id, 
-                prov_name, 
-                post_date.strftime('%m/%d/%y'), 
-                "To Record #{post_date.strftime('%m/%d/%y')} Billing", 
-                "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}", 
-                post_date.strftime('%m/%d/%y'), 
-                "To Rec for W/E #{post_date - 6} Billing", 
-                prov.fund, 
-                prov.debit_account,   
+      row << [2,
+                inv.invoice_number,
+                post_date.strftime('%m/%d/%y'),
+                fund_id,
+                prov_name,
+                post_date.strftime('%m/%d/%y'),
+                "To Record #{post_date.strftime('%m/%d/%y')} Billing",
+                "#{post_date.strftime('%m')}/#{post_date.strftime('%y')}#{prov.abbreviation}",
+                post_date.strftime('%m/%d/%y'),
+                "To Rec for W/E #{post_date - 6} Billing",
+                prov.fund,
+                prov.debit_account,
                 prov.fund, '',      prov.prov_type,                     '',     inv.amount]
-    end   
+    end
   end
 
   def self.check_prompt
@@ -110,7 +110,7 @@ module Sunnyside
         payment.update(:check_number => gets.chomp)
       end
 
-      yield payment 
+      yield payment
     end
   end
 

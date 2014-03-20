@@ -2,9 +2,9 @@ require 'prawn'
 module Sunnyside
   # This should be redone.
   def self.ledger_file
-    files = Dir["#{DRIVE}/sunnyside-files/summary/*.PDF"] 
-    files.each do |file| 
-      if Filelib.where(filename: file).count == 0 
+    files = Dir["#{DRIVE}/sunnyside-files/summary/*.PDF"]
+    files.each do |file|
+      if Filelib.where(filename: file).count == 0
         puts "processing #{file}..."
         ledger = Ledger.new(file)
         ledger.process_file
@@ -36,7 +36,7 @@ module Sunnyside
       Invoice.where(post_date: post_date).all.each { |inv| self.payable_csv(inv, post_date) }
     end
   end
-  
+
   class Ledger
     include Sunnyside
     attr_reader   :post_date, :file, :pages
@@ -65,7 +65,7 @@ module Sunnyside
 
   # in PageData, the providers name is captured from the PDF::Reader raw_content, and the post date from the file name.
   # the rest of the data (the invoices) gets split by newlines (filted by those lines that fit the criteria for invoice data)
-  # Then, the data gets finalized (via the InvoiceLine child class of PageData) and inserted into the database. 
+  # Then, the data gets finalized (via the InvoiceLine child class of PageData) and inserted into the database.
 
   class PageData
     attr_reader :page_data, :provider, :post_date, :invoice_data
@@ -86,8 +86,8 @@ module Sunnyside
           Provider[5]
         when 'AMERIGROUP'
           Provider[1]
-        else 
-          Provider[16]     
+        else
+          Provider[16]
         end
       else
         Provider.where(name: provider).first
@@ -99,10 +99,10 @@ module Sunnyside
     end
 
     def invoice_lines
-      page_data.map { |line| 
+      page_data.map { |line|
         line.gsub!(/^\(|\)'/)
         client_name = line.slice!(20..45)
-        line        = InvoiceLine.new(line, formatted_provider, post_date, client_name) 
+        line        = InvoiceLine.new(line, formatted_provider, post_date, client_name)
       }
     end
 
@@ -121,7 +121,7 @@ module Sunnyside
         @provider                                               = provider
       end
 
-      # Some invoice totals exceed $999.99, so the strings need to be parsed into a format, sans comma, that the DB will read correctly. 
+      # Some invoice totals exceed $999.99, so the strings need to be parsed into a format, sans comma, that the DB will read correctly.
       # Otherwise, the DB will read 1,203.93 as 1.0.
 
       def amt
@@ -132,10 +132,10 @@ module Sunnyside
       # new client gets saved into the DB with a new FUND EZ ID. It must do this before saving the invoice information.
 
       def finalize
-        if !client_missing? 
+        if !client_missing?
           update_client if new_provider?
           add_invoice
-        else 
+        else
           add_client
           add_invoice
         end

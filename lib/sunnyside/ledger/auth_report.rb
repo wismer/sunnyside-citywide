@@ -8,7 +8,7 @@ module Sunnyside
     files.each do |file|
       puts "processing #{file}..."
       data = PDF::Reader.new(file).pages.map { |page| page.raw_content.gsub(/^\(\s|\)'$/, '') }.join
-      data.split(/(?=REG\s+LOC)/).each { |entry| ParseInvoice.new(entry).process } 
+      data.split(/(?=REG\s+LOC)/).each { |entry| ParseInvoice.new(entry).process }
       Filelib.insert(filename: file, purpose: '837')
       FileUtils.mv(file, "#{DRIVE}/sunnyside-files/837/archive/#{File.basename(file)}")
     end
@@ -27,14 +27,14 @@ module Sunnyside
     end
 
     def invoice_lines
-      visits.map { |inv| 
+      visits.map { |inv|
           InvoiceDetail.new(
-            client_data, 
-            { :invoice  => inv[0..5], 
-              :svc_code => inv[18..22], 
-              :modifier => inv[25..30], 
-              :dos      => inv[57..66], 
-              :units    => inv[69..75], 
+            client_data,
+            { :invoice  => inv[0..5],
+              :svc_code => inv[18..22],
+              :modifier => inv[25..30],
+              :dos      => inv[57..66],
+              :units    => inv[69..75],
               :amount   => inv[79..88] }
           )
       }
@@ -65,8 +65,8 @@ module Sunnyside
 
     def to_db
       Visit.insert(
-        :client_id    => client_id, 
-        :modifier     => modifier, 
+        :client_id    => client_id,
+        :modifier     => modifier,
         :invoice_id   => invoice,
         :amount       => amount,
         :service_code => service_code,

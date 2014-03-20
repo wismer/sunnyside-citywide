@@ -8,7 +8,7 @@ module Sunnyside
     edi_file.parse_claims
   end
 
-  class EdiReader 
+  class EdiReader
     attr_reader :edi_data
 
     def initialize(edi_data)
@@ -74,11 +74,11 @@ module Sunnyside
 
     def to_db(payment)
       Claim.insert(
-        :invoice_id     => invoice, 
-        :payment_id     => payment, 
-        :control_number => claim_number, 
-        :paid           => paid, 
-        :billed         => billed, 
+        :invoice_id     => invoice,
+        :payment_id     => payment,
+        :control_number => claim_number,
+        :paid           => paid,
+        :billed         => billed,
         :status         => response_code
       )
       return Claim.id
@@ -127,8 +127,8 @@ module Sunnyside
 
     def to_db(claim)
       Service.insert(
-        :claim_id      => claim, 
-        :denial_reason => denial_reason, 
+        :claim_id      => claim,
+        :denial_reason => denial_reason,
         :service_code  => service_code.gsub(/HC:/, ''),
         :paid          => paid,
         :billed        => billed,
@@ -176,7 +176,7 @@ module Sunnyside
     end
 
     def reasons
-      case code.to_i 
+      case code.to_i
       when 197 then "Can't operate heavy machinery with an amputated limb.\n"
       when 85  then "Not tall enough to ride on roller coasters.\n"
       when 23  then "Unusually insane.\n"
