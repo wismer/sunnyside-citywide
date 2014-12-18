@@ -86,8 +86,8 @@ module Sunnyside
           Provider[5]
         when 'AMERIGROUP'
           Provider[1]
-        else 
-          Provider[16]     
+        else
+          Provider[16]
         end
       else
         Provider.where(name: provider).first
@@ -99,8 +99,9 @@ module Sunnyside
     end
 
     def invoice_lines
-      page_data.map { |line| 
+      page_data.map { |line|
         line.gsub!(/^\(|\)'/)
+        line.gsub!("\x00", " ")
         client_name = line.slice!(20..45)
         line        = InvoiceLine.new(line, formatted_provider, post_date, client_name) 
       }
