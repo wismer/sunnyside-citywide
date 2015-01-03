@@ -18,7 +18,7 @@ module Sunnyside
       @ftp      = Net::FTP.new(login[:site])
       @username = login[:username]
       @password = login[:password]
-      @name     = login[:provider]      
+      @name     = login[:provider]
     end
 
     def log_on
@@ -111,7 +111,7 @@ end
     # end
 
     # def upload_files
-    #   up_files.each { |file| 
+    #   up_files.each { |file|
     #     if file.include?(name)
     #       puts "uploading #{file} for #{name}"
     #       ftp.putbinaryfile(file)
@@ -119,6 +119,6 @@ end
     #       puts "deleting #{file} in local folder."
     #       FileUtils.mv(file, "#{DRIVE}/sunnyside-files/ftp/837/#{name}/#{File.basename(file)}")
     #     end
-    #   }      
+    #   }
     #   ftp.close
     # end

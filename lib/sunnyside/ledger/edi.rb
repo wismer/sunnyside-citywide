@@ -2,30 +2,26 @@ module Sunnyside
   def self.edi_parser
     print "checking for new files...\n"
     Dir["#{DRIVE}/sunnyside-files/835/*.txt"].each do |file|
-      
+
       if Filelib.where(filename: file).count > 0
         puts "This file has been processed already. File removed."
-        File.delete(file) 
+        File.delete(file)
       else
-        print "processing #{file}...\n"
-        file_data = File.open(file)
-        data = file_data.read
-        # Detect to see if the EDI file already has new lines inserted. If so, the newlines are removed before the file gets processed.
+        puts "processing #{file}..."
+        data = File.read(file)
 
-        data.gsub!(/\n/, '')
+        # Detect to see if the EDI file already has new lines inserted.
+        # If so, the newlines are removed before the file gets processed.
+        data.gsub!(/\n/, '').split!(/~CLP\*/)
 
-        data     = data.split(/~CLP\*/)
-
-        edi_file = EdiReader.new(data)
-        edi_file.parse_claims
+        edi_file = EdiReader.new(data).parse_claims
         Filelib.insert(filename: File.basename(file), purpose: '835')
-        file_data.close
-        FileUtils.mv(file, "#{DRIVE}/sunnyside-files/835/archive/#{File.basename(file)}")  
+        FileUtils.mv(file, "#{DRIVE}/sunnyside-files/835/archive/#{File.basename(file)}")
       end
     end
   end
 
-  class EdiReader 
+  class EdiReader
     attr_reader :data
 
     def initialize(data)
@@ -48,6 +44,7 @@ module Sunnyside
     def parse_claims
       payment_id = Payment.insert(check_number: check_number, check_total: check_total)
       claims.each { |claim| ClaimParser.new(claim, payment_id).parse }
+      self
     end
   end
 
@@ -73,7 +70,7 @@ module Sunnyside
 
     def parse
       claim    = ClaimEntry.new(header)
-      claim_id = claim.to_db(payment_id) 
+      claim_id = claim.to_db(payment_id)
       service_data.each { |service| ServiceParser.new(service, claim_id).parse }
     end
   end
@@ -93,13 +90,13 @@ module Sunnyside
     def to_db(payment)
       payment.update(provider_id: inv.provider_id) if payment.provider_id.nil?
       Claim.insert(
-        :invoice_id     => invoice, 
-        :payment_id     => payment.id, 
-        :client_id      => inv.client_id, 
-        :control_number => claim_number, 
-        :paid           => paid, 
-        :billed         => billed, 
-        :status         => response_code, 
+        :invoice_id     => invoice,
+        :payment_id     => payment.id,
+        :client_id      => inv.client_id,
+        :control_number => claim_number,
+        :paid           => paid,
+        :billed         => billed,
+        :status         => response_code,
         :provider_id    => inv.provider_id,
         :recipient_id   => inv.recipient_id
       )
@@ -152,10 +149,10 @@ module Sunnyside
 
     def to_db(claim)
       Service.insert(
-        :claim_id      => claim.id, 
-        :invoice_id    => claim.invoice_id, 
-        :payment_id    => claim.payment_id, 
-        :denial_reason => denial_reason, 
+        :claim_id      => claim.id,
+        :invoice_id    => claim.invoice_id,
+        :payment_id    => claim.payment_id,
+        :denial_reason => denial_reason,
         :service_code  => service_code.gsub(/HC:/, ''),
         :paid          => paid,
         :billed        => billed,

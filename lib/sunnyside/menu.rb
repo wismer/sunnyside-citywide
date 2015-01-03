@@ -1,8 +1,8 @@
 module Sunnyside
   class Menu
     def start
-      loop do 
-        puts " 1.) LEDGER IMPORT" 
+      loop do
+        puts " 1.) LEDGER IMPORT"
         puts " 2.) EDI IMPORT"
         puts " 3.) 837 IMPORT"
         puts " 4.) A/R REPORT"
@@ -17,16 +17,16 @@ module Sunnyside
         puts "13.) ADD LOGIN CREDENTIALS FOR NEW FTP EDI FILE TRANSFER"
         print "select option: "
         case gets.chomp
-        when '1' 
+        when '1'
           Sunnyside.ledger_file
           Sunnyside.process_private
-        when '2' 
+        when '2'
           Sunnyside.edi_parser
         when '3'
           Sunnyside.parse_pdf
-        when '4' 
+        when '4'
           Sunnyside.run_report
-        when '5' 
+        when '5'
           Sunnyside.cash_receipt
         when '6'
           Sunnyside.access_ftp
